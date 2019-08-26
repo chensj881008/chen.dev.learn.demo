@@ -7,4 +7,11 @@
        http://www.springframework.org/schema/security
        http://www.springframework.org/schema/security/spring-security.xsd">
 
+
+    <!--Spring Security 基本配置-->
+    <security:http>
+        <security:http-basic/>
+    </security:http>
+
+    <security:authentication-manager></security:authentication-manager>
 </beans>
