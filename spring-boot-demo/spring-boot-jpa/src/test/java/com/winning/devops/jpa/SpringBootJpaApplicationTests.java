@@ -21,7 +21,7 @@ public class SpringBootJpaApplicationTests {
     private UserRepository userRepository;
 
     @Test
-    public void testJpaDemo01(){
+    public void testJpaDemo01() {
         // 创建10条记录
         userRepository.save(new User("AAA", 10));
         userRepository.save(new User("BBB", 20));

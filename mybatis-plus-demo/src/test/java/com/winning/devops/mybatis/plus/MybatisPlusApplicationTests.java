@@ -17,12 +17,13 @@ public class MybatisPlusApplicationTests {
 
     @Autowired
     private UserMapper userMapper;
+
     @Test
     public void contextLoads() {
     }
 
     @Test
-    public void testSelect(){
+    public void testSelect() {
         System.out.println("----- selectAll method test -----");
         List<User> userList = userMapper.selectList(null);
         Assert.assertEquals(5, userList.size());

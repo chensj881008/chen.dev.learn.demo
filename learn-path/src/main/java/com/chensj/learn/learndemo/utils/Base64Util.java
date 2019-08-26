@@ -167,12 +167,12 @@ public class Base64Util {
         return false;
     }
 
-    public static String encodeBase64(String s){
-        Object retObj= null;
+    public static String encodeBase64(String s) {
+        Object retObj = null;
         try {
             byte[] input = s.getBytes();
-            Class clazz=Class.forName("com.sun.org.apache.xerces.internal.impl.dv.util.Base64");
-            Method mainMethod= clazz.getMethod("encode", byte[].class);
+            Class clazz = Class.forName("com.sun.org.apache.xerces.internal.impl.dv.util.Base64");
+            Method mainMethod = clazz.getMethod("encode", byte[].class);
             mainMethod.setAccessible(true);
             retObj = mainMethod.invoke(null, new Object[]{input});
         } catch (ClassNotFoundException e) {
@@ -184,16 +184,17 @@ public class Base64Util {
         } catch (InvocationTargetException e) {
             e.printStackTrace();
         }
-        return (String)retObj;
+        return (String) retObj;
     }
+
     /***
      * decode by Base64
      */
     public static String decodeBase64(String input) {
-        Object retObj= null;
+        Object retObj = null;
         try {
-            Class clazz=Class.forName("com.sun.org.apache.xerces.internal.impl.dv.util.Base64");
-            Method mainMethod= clazz.getMethod("decode", String.class);
+            Class clazz = Class.forName("com.sun.org.apache.xerces.internal.impl.dv.util.Base64");
+            Method mainMethod = clazz.getMethod("decode", String.class);
             mainMethod.setAccessible(true);
             retObj = mainMethod.invoke(null, input);
         } catch (ClassNotFoundException e) {
@@ -205,6 +206,6 @@ public class Base64Util {
         } catch (InvocationTargetException e) {
             e.printStackTrace();
         }
-        return new String((byte[])retObj);
+        return new String((byte[]) retObj);
     }
 }

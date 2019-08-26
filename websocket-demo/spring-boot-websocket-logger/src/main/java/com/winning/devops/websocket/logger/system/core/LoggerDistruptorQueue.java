@@ -35,7 +35,7 @@ public class LoggerDistruptorQueue {
     /**
      * RingBuffer 大小，必须是 2 的 N 次方；
      */
-    int ringBufferSize =  1024 * 1024;
+    int ringBufferSize = 1024 * 1024;
     /**
      * 构造器初始化Disruptor
      */
@@ -48,7 +48,7 @@ public class LoggerDistruptorQueue {
     private static RingBuffer<LoggerEvent> ringBuffer;
 
     @Autowired
-    LoggerDistruptorQueue(LoggerEventHandler eventHandler){
+    LoggerDistruptorQueue(LoggerEventHandler eventHandler) {
         System.out.println("init LoggerDistruptorQueue");
         disruptor.handleEventsWith(eventHandler);
         this.ringBuffer = disruptor.getRingBuffer();
@@ -57,6 +57,7 @@ public class LoggerDistruptorQueue {
 
     /**
      * 事件发布
+     *
      * @param log
      */
     public static void publishEvent(LoggerMessage log) {

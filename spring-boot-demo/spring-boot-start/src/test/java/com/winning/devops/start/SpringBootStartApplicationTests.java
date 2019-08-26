@@ -19,7 +19,7 @@ public class SpringBootStartApplicationTests {
     private PropsComponent propsComponent;
 
     @Test
-    public void testProps(){
+    public void testProps() {
         System.out.println(propsComponent.getName());
         System.out.println(propsComponent.getUrl());
         System.out.println(propsComponent.getDesc());

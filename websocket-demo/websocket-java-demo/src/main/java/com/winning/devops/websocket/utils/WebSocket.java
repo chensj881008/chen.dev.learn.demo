@@ -39,6 +39,7 @@ public class WebSocket {
         System.out.println("已连接");
         LOG.info("WebSocket 已连接");
     }
+
     @OnClose
     public void onClose() throws IOException {
         clients.remove(username);
@@ -50,9 +51,9 @@ public class WebSocket {
         JSONObject jsonTo = JSONObject.parseObject(message);
         String mes = (String) jsonTo.get("message");
 
-        if (!jsonTo.get("To").equals("All")){
+        if (!jsonTo.get("To").equals("All")) {
             sendMessageTo(mes, jsonTo.get("To").toString());
-        }else{
+        } else {
             sendMessageAll("给所有人");
         }
     }
@@ -67,7 +68,7 @@ public class WebSocket {
         // session.getBasicRemote().sendText(message);
         //session.getAsyncRemote().sendText(message);
         for (WebSocket item : clients.values()) {
-            if (item.username.equals(To) ){
+            if (item.username.equals(To)) {
                 item.session.getAsyncRemote().sendText(message);
             }
         }

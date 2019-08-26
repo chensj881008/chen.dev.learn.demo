@@ -108,7 +108,7 @@ public class DBLoggerAppender extends DBAppenderBase<ILoggingEvent> {
     }
 
     //安全验证及个性化的数据
-    void bindLoggingMyInfoWithPreparedStatement(PreparedStatement stmt, ILoggingEvent event)throws SQLException {
+    void bindLoggingMyInfoWithPreparedStatement(PreparedStatement stmt, ILoggingEvent event) throws SQLException {
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
         String account = Base64Util.decodeBase64(request.getHeader("account"));
         String passwd = Base64Util.decodeBase64(request.getHeader("passwd"));
@@ -118,12 +118,12 @@ public class DBLoggerAppender extends DBAppenderBase<ILoggingEvent> {
         stmt.setString(PASSWORD_INDEX, passwd);
         stmt.setString(SERVERIP_INDEX, ip);
         stmt.setString(APPKEY_INDEX, appkey);
-        stmt.setString(URL_INDEX,request.getRequestURL().toString());
-        stmt.setString(REQUESTIP_INDEX,request.getRemoteAddr());
+        stmt.setString(URL_INDEX, request.getRequestURL().toString());
+        stmt.setString(REQUESTIP_INDEX, request.getRemoteAddr());
         stmt.setString(PROJECT_INDEX, "tmall-api");
-        Date day=new Date();
+        Date day = new Date();
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        stmt.setString(CREATEDATE_INDEX,df.format(day));
+        stmt.setString(CREATEDATE_INDEX, df.format(day));
     }
 
     void bindLoggingEventWithInsertStatement(PreparedStatement stmt, ILoggingEvent event) throws SQLException {

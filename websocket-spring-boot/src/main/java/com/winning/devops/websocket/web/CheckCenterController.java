@@ -20,7 +20,7 @@ public class CheckCenterController {
     //页面请求
     @GetMapping("/socket/{cid}")
     public ModelAndView socket(@PathVariable String cid) {
-        ModelAndView mav=new ModelAndView("/socket");
+        ModelAndView mav = new ModelAndView("/socket");
         mav.addObject("cid", cid);
         return mav;
     }

@@ -17,7 +17,7 @@ public class BitCoinServer {
     private Session session;
 
     @OnOpen
-    public void onOpen(Session session){
+    public void onOpen(Session session) {
         this.session = session;
         ServerManager.add(this);
     }
@@ -27,7 +27,7 @@ public class BitCoinServer {
     }
 
     @OnClose
-    public void onClose(){
+    public void onClose() {
         ServerManager.remove(this);
     }
 
@@ -37,11 +37,10 @@ public class BitCoinServer {
     }
 
     @OnError
-    public void onError(Session session, Throwable error){
+    public void onError(Session session, Throwable error) {
         System.out.println("发生错误");
         error.printStackTrace();
     }
-
 
 
 }

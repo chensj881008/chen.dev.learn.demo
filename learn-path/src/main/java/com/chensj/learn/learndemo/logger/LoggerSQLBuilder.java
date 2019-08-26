@@ -9,6 +9,6 @@ package com.chensj.learn.learndemo.logger;
  */
 public class LoggerSQLBuilder {
     public static String buildInsertSQL() {
-        return  "";
+        return "";
     }
 }

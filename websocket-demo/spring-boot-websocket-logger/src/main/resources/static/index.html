@@ -16,7 +16,8 @@
 <div id="main-content" class="container">
     <h1>jvm进程内的日志</h1>
     <div class="row">
-        <button onclick="openSocket()">开启日志</button><button onclick="closeSocket()">关闭日志</button>
+        <button onclick="openSocket()">开启日志</button>
+        <button onclick="closeSocket()">关闭日志</button>
     </div>
     <div id="log-container" style="height: 300px; overflow-y: scroll; background: #333; color: #aaa; padding: 10px;">
         <div></div>
@@ -30,18 +31,18 @@
     /**
      * 创建连接
      */
-    function openSocket(){
-        if(stompClient == null){
+    function openSocket() {
+        if (stompClient == null) {
             var scoket = new SockJS('http://localhost:8080/logger?token=kl');
             stompClient = Stomp.over(scoket)
-            stompClient.connect({token:"kl"},function (iframe) {
+            stompClient.connect({token: "kl"}, function (iframe) {
                 console.log(iframe);
-                stompClient.subscribe('/topic/pullLogger',function (event) {
-                    var content=JSON.parse(event.body);
-                    $("#log-container div").append(content.timestamp +" "+ content.level+" --- ["+ content.threadName+"] "+ content.className+"   :"+content.body).append("<br/>");
+                stompClient.subscribe('/topic/pullLogger', function (event) {
+                    var content = JSON.parse(event.body);
+                    $("#log-container div").append(content.timestamp + " " + content.level + " --- [" + content.threadName + "] " + content.className + "   :" + content.body).append("<br/>");
                     $("#log-container").scrollTop($("#log-container div").height() - $("#log-container").height());
-                },{
-                    token:"kltoen"
+                }, {
+                    token: "kltoen"
                 })
             })
         }
@@ -50,8 +51,8 @@
     /**
      * 关闭连接
      */
-    function closeSocket(){
-        if(stompClient != null){
+    function closeSocket() {
+        if (stompClient != null) {
             stompClient.disconnect();
             stompClient = null;
         }

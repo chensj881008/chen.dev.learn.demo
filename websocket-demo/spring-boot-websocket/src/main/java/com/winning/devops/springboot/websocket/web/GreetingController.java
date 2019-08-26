@@ -20,6 +20,7 @@ import org.springframework.web.util.HtmlUtils;
 public class GreetingController {
 
     private static final Logger LOG = LoggerFactory.getLogger(GreetingController.class);
+
     @MessageMapping("/hello")
     @SendTo("/topic/greetings")
     public Greeting greeting(HelloMessage message) throws InterruptedException {

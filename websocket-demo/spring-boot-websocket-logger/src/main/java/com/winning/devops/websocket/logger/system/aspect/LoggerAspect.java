@@ -28,51 +28,59 @@ import java.util.List;
 public class LoggerAspect {
 
     private static final Logger logger = LoggerFactory.getLogger(LoggerAspect.class);
+
     /**
      * 定义切点
      */
     @Pointcut("execution(* com.winning.devops.websocket.logger..dao..*(..)) ||" +
-             "execution(* com.winning.devops.websocket.logger..web..*(..)) ||" +
-             "execution(* com.winning.devops.websocket.logger..service..*(..))")
-    public void loggerErrorPointcut(){}
+            "execution(* com.winning.devops.websocket.logger..web..*(..)) ||" +
+            "execution(* com.winning.devops.websocket.logger..service..*(..))")
+    public void loggerErrorPointcut() {
+    }
+
     /**
      * 定义切点
      */
     @Pointcut("execution(* com.winning.devops.websocket.logger..web..*(..))")
-    public void loggerWebPointcut(){}
+    public void loggerWebPointcut() {
+    }
+
     /**
      * 环绕日志
+     *
      * @param joinPoint
      */
     @Around(value = "loggerWebPointcut()")
     public void handleAround(JoinPoint joinPoint) {//DAO层抛出的异常在这边捕获
         List<String> params = initParams(joinPoint);
-        logger.info("执行方法为：所在类：[{}],方法名称：[{}],参数:[{}],开始时间:[{}]",params.get(2),params.get(0),params.get(1),new SimpleDateFormat("YYYY-MM-DD HH:mm:ss").format(new Date()));
+        logger.info("执行方法为：所在类：[{}],方法名称：[{}],参数:[{}],开始时间:[{}]", params.get(2), params.get(0), params.get(1), new SimpleDateFormat("YYYY-MM-DD HH:mm:ss").format(new Date()));
         try {
             ((ProceedingJoinPoint) joinPoint).proceed();
         } catch (Throwable e) {
-            logger.error("异常所在类：[{}],异常所在方法：[{}],异常中的参数:[{}],异常:[{}]\n\r",params.get(2),params.get(0),params.get(1),e.getMessage());
+            logger.error("异常所在类：[{}],异常所在方法：[{}],异常中的参数:[{}],异常:[{}]\n\r", params.get(2), params.get(0), params.get(1), e.getMessage());
         }
-        logger.info("执行方法为：所在类：[{}],方法名称：[{}],参数:[{}],结束时间:[{}]",params.get(2),params.get(0),params.get(1),new SimpleDateFormat("YYYY-MM-DD HH:mm:ss").format(new Date()));
+        logger.info("执行方法为：所在类：[{}],方法名称：[{}],参数:[{}],结束时间:[{}]", params.get(2), params.get(0), params.get(1), new SimpleDateFormat("YYYY-MM-DD HH:mm:ss").format(new Date()));
     }
 
     /**
      * 错误日志
+     *
      * @param joinPoint
      * @param e
      */
-    @AfterThrowing(value = "loggerErrorPointcut()",throwing = "e")
+    @AfterThrowing(value = "loggerErrorPointcut()", throwing = "e")
     public void handleThrowing(JoinPoint joinPoint, Exception e) {//DAO层抛出的异常在这边捕获
         List<String> params = initParams(joinPoint);
-        logger.info("异常所在类：[{}],异常所在方法：[{}],异常中的参数:[{}],异常:[{}]\n\r",params.get(2),params.get(0),params.get(1),e.getMessage());
+        logger.info("异常所在类：[{}],异常所在方法：[{}],异常中的参数:[{}],异常:[{}]\n\r", params.get(2), params.get(0), params.get(1), e.getMessage());
     }
 
     /**
      * 参数封装
+     *
      * @param joinPoint
      * @return
      */
-    private List<String> initParams(JoinPoint joinPoint){
+    private List<String> initParams(JoinPoint joinPoint) {
         List<String> params = new ArrayList<>();
         String methodName = joinPoint.getSignature().getName();
         params.add(methodName);

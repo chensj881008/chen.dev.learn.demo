@@ -14,11 +14,11 @@ import java.io.IOException;
  */
 public class WebsocketJavaDemoApplication {
 
-    public static void main(String[] args){
+    public static void main(String[] args) {
         WebSocket ws = new WebSocket();
         JSONObject jo = new JSONObject();
         jo.put("message", "这是后台返回的消息！");
-        jo.put("To","ALL");
+        jo.put("To", "ALL");
         try {
             ws.onMessage(jo.toString());
         } catch (IOException e) {

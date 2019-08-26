@@ -17,8 +17,8 @@ public class AppMember {
 
     // @EnableEurekaClient 将当前服务到Eureka中
 
-    public static void main(String[] args){
-        SpringApplication.run(AppMember.class,args);
+    public static void main(String[] args) {
+        SpringApplication.run(AppMember.class, args);
     }
 
 }

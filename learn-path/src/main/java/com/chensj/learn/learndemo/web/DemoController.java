@@ -20,7 +20,7 @@ public class DemoController {
 
     @RequestMapping(value = "/")
     @ResponseBody
-    public String index(){
+    public String index() {
         demoService.demo();
         return "index";
     }

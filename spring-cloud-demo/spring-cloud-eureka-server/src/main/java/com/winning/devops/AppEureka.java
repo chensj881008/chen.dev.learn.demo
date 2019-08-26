@@ -17,8 +17,8 @@ public class AppEureka {
 
     // @EnableEurekaServer 表示开启 EurekaServer服务 开启注册中心
 
-    public static void main(String[] args){
-        SpringApplication.run(AppEureka.class,args);
+    public static void main(String[] args) {
+        SpringApplication.run(AppEureka.class, args);
     }
 
 }

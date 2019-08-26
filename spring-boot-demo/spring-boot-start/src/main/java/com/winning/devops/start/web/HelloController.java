@@ -19,12 +19,13 @@ public class HelloController {
     /**
      * 通过@ApiOperation注解来给API增加说明、
      * 通过@ApiImplicitParams、@ApiImplicitParam注解来给参数增加说明
+     *
      * @return str
      */
-    @ApiOperation(value = "sayHello",notes = "")
+    @ApiOperation(value = "sayHello", notes = "")
     @ApiImplicitParam()
     @GetMapping(value = {""})
-    public String sayHelloPage(){
+    public String sayHelloPage() {
         return "hello";
     }
 }

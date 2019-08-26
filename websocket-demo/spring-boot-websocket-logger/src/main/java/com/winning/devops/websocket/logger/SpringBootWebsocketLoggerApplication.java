@@ -18,14 +18,16 @@ import org.springframework.web.bind.annotation.RestController;
 public class SpringBootWebsocketLoggerApplication {
 
     private static final Logger LOG = LoggerFactory.getLogger(SpringBootWebsocketLoggerApplication.class);
+
     public static void main(String[] args) {
         SpringApplication.run(SpringBootWebsocketLoggerApplication.class, args);
     }
 
     int info = 1;
+
     @Scheduled(fixedRate = 1000)
-    public void logger(){
-        LOG.info("logger info : "+ ++info);
+    public void logger() {
+        LOG.info("logger info : " + ++info);
         throw new RuntimeException("测试信息");
     }
 

@@ -18,18 +18,20 @@ import org.springframework.web.client.RestTemplate;
 @EnableEurekaClient
 public class AppOrder {
 
-    public static void main(String[] args){
-        SpringApplication.run(AppOrder.class,args);
+    public static void main(String[] args) {
+        SpringApplication.run(AppOrder.class, args);
     }
+
     /**
      * 解决RestTemplate找不到的问题
      * 应该将RestTemplate注册到spring 容器中
+     *
      * @LoadBalanced 表示能够让RestTemplate拥有客户端负载均衡的能力
      */
     @Bean
     @LoadBalanced
-    RestTemplate getRestTemplate(){
-        return  new RestTemplate();
+    RestTemplate getRestTemplate() {
+        return new RestTemplate();
     }
 
 

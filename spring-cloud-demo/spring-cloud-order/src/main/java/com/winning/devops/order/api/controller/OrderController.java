@@ -21,21 +21,23 @@ public class OrderController {
      */
     @Autowired
     private RestTemplate restTemplate;
+
     /**
      * 在Spring Cloud中有两种调用：Rest、feign
+     *
      * @return
      */
     @RequestMapping("getOrder")
-    public String getOrder(){
+    public String getOrder() {
         // url 存在两种方式：一种采用服务别名方式调用，另一种是直接调用
         // 采用服务别名方式调用
         String url = "http://app-member/getMember";
         // 上述这种配置将会出现UnknownHostException，无法识别app-member这个服务别名
         // 这个时候需要依赖ribbon的相关jar，需要在RestTemplate注册的时候增加Ribbon的使用
-        String result = restTemplate.getForObject(url,String.class);
+        String result = restTemplate.getForObject(url, String.class);
         // 直接调用
         // String result = restTemplate.getForObject("http://127.0.0.1:8000/getMember",String.class);
-        System.out.println("订单服务调用会员服务result:"+result);
+        System.out.println("订单服务调用会员服务result:" + result);
         return result;
     }
 }

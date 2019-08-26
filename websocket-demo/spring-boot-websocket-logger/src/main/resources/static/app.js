@@ -5,8 +5,7 @@ function setConnected(connected) {
     $("#disconnect").prop("disabled", !connected);
     if (connected) {
         $("#conversation").show();
-    }
-    else {
+    } else {
         $("#conversation").hide();
     }
     $("#greetings").html("");
@@ -44,14 +43,15 @@ function sendName() {
 function showGreeting(message) {
     $("#greetings").append("<tr><td>" + message + "</td></tr>");
 }
+
 <!-- 日志实时推送业务处理 -->
 function openSocket() {
-    if(stompClient != null){
+    if (stompClient != null) {
         stompClient = null;
     }
     console.log('日志实时推送业务处理');
     if (stompClient == null) {
-        if($("#log-container").find("span").length==0){
+        if ($("#log-container").find("span").length == 0) {
             $("#log-container div").after("<span>通道连接成功,静默等待.....</span><img src='/layer/theme/default/loading-0.gif'>");
         }
         console.log($("#log-container").find("span").length);
@@ -99,13 +99,20 @@ function closeSocket() {
         stompClient = null;
     }
 }
+
 $(function () {
     $("form").on('submit', function (e) {
         e.preventDefault();
     });
-    $( "#connect" ).click(function() { connect(); });
-    $( "#disconnect" ).click(function() { disconnect(); });
-    $( "#send" ).click(function() { sendName(); });
+    $("#connect").click(function () {
+        connect();
+    });
+    $("#disconnect").click(function () {
+        disconnect();
+    });
+    $("#send").click(function () {
+        sendName();
+    });
     // $("#log").click(function () {
     //     openSocket()
     //     //iframe层
@@ -125,9 +132,6 @@ $(function () {
     // $('#logConnect').click(function () {
     //     stompClient.send("/app/logger", {}, {});
     // })
-
-
-
 
 
 });

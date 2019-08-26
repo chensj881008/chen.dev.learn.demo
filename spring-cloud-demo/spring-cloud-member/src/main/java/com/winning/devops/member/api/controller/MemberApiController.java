@@ -15,12 +15,14 @@ import org.springframework.web.bind.annotation.RestController;
 public class MemberApiController {
     @Value("${server.port}")
     private String serverPort;
+
     /**
-     *  获取会员
+     * 获取会员
+     *
      * @return
      */
     @RequestMapping(value = "/getMember")
-    public String getMember(){
-        return "this is member , come from class: "+getClass()+", port:" + serverPort;
+    public String getMember() {
+        return "this is member , come from class: " + getClass() + ", port:" + serverPort;
     }
 }

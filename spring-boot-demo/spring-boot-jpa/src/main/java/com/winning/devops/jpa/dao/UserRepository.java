@@ -14,10 +14,11 @@ import org.springframework.stereotype.Repository;
  * @date: 2019-02-13 9:42
  */
 @Repository
-public interface UserRepository extends JpaRepository<User,Long> {
+public interface UserRepository extends JpaRepository<User, Long> {
     /**
      * 根据名称获取用户
      * 解析方法名来创建查询
+     *
      * @param name
      * @return
      */
@@ -26,15 +27,17 @@ public interface UserRepository extends JpaRepository<User,Long> {
     /**
      * 根据名称和年龄获取用户
      * 解析方法名来创建查询
+     *
      * @param name
      * @param age
      * @return
      */
-    User findByNameAndAge(String name,Integer age);
+    User findByNameAndAge(String name, Integer age);
 
     /**
      * HQL查询
      * 使用@Query 注解来创建查询，您只需要编写JPQL语句，并通过类似“:name”来映射@Param指定的参数
+     *
      * @param name
      * @return
      */
