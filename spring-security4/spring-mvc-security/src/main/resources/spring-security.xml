@@ -6,12 +6,34 @@
        http://www.springframework.org/schema/beans/spring-beans.xsd
        http://www.springframework.org/schema/security
        http://www.springframework.org/schema/security/spring-security.xsd">
+    <!--
 
+       Spring Security 配置文件
+    -->
 
-    <!--Spring Security 基本配置-->
+    <!--Spring Security 基本配置
+        <security:http>：spring security 过滤链接配置
+        1）过滤拦截什么资源
+        2）什么资源什么权限
+        3) 定义认证方式：HttpBasic、FormLogin等
+        4）定义登录页面、登录请求地址、错误处理方式等等
+        <security:http-basic/>：使用HttpBasic方式认证
+    -->
     <security:http>
+        <!--
+            pattern：需要拦截的资源
+            access: 定义资源认证的方式
+        -->
+        <security:intercept-url pattern="/**" access="isFullyAuthenticated()"/>
+        <security:intercept-url pattern="/" access="isAnonymous()"/>
+        <!--指定认证方式-->
         <security:http-basic/>
     </security:http>
 
+    <!--
+        <security:authentication-manager/>： 认证管理器
+        1） 认证信息（账户、密码、权限信息等）
+
+    -->
     <security:authentication-manager/>
 </beans>
