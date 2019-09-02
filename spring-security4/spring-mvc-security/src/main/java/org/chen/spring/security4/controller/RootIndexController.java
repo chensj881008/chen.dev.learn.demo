@@ -14,4 +14,9 @@ public class RootIndexController {
     public String rootIndex() {
         return "index";
     }
+
+    @RequestMapping(value = {"/userLogin"})
+    public String loginIndex() {
+        return "login";
+    }
 }
