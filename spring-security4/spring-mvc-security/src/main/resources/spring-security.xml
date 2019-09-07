@@ -27,15 +27,40 @@
                 permitAll() 所有人(匿名用户和登录用户)都可以访问
                 isAnonymous() 只有匿名用户才能访问
         -->
+        <security:intercept-url pattern="/userLogin" access="permitAll()"/>
+        <security:intercept-url pattern="/user/login" access="permitAll()"/>
         <security:intercept-url pattern="/" access="permitAll()"/>
         <security:intercept-url pattern="/index" access="permitAll()"/>
         <security:intercept-url pattern="/index.html" access="permitAll()"/>
+        <!--访问权限控制配置-->
+        <security:intercept-url pattern="/product/add" access="hasRole('ROLE_ADMIN')"/>
+        <security:intercept-url pattern="/product/update" access="hasRole('ROLE_ADMIN')"/>
+        <security:intercept-url pattern="/product/list" access="hasRole('ROLE_USER')"/>
+        <security:intercept-url pattern="/product/delete" access="hasRole('ROLE_USER')"/>
         <security:intercept-url pattern="/**" access="isFullyAuthenticated()"/>
-
         <!--指定认证方式 当前使用http-basic-->
         <!--        <security:http-basic/>-->
-        <!--认证方式：form-login方式-->
-        <security:form-login/>
+        <!--认证方式：form-login方式
+         login-page 自定义登录url 注意如果使用这个，需要放行这个url，
+            <security:intercept-url pattern="/userLogin" access="permitAll()"/>
+         保证后续的正常进行
+         password-parameter/username-parameter用来指定传入参数的名称
+         login-processing-url 登录请求的地址,注意这个请求也是需要放行的，否则将会无法登录
+          <security:intercept-url pattern="/user/login" access="permitAll()"/>
+          注意在自定义login页面的时候将会报错，关于csrf的，可以在登录页面中使用如下的配置使用csrf
+          <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
+          或者使用如下配置关闭csrf
+           <security:csrf disabled="true"/>
+        -->
+        <security:form-login login-page="/userLogin"
+                             password-parameter="pass"
+                             username-parameter="user"
+                             login-processing-url="/user/login"
+                             default-target-url="/index"/>
+        <!--关闭Spring Security CSRF机制-->
+        <security:csrf disabled="true"/>
+        <!--指定全局权限不足错误页面-->
+        <security:access-denied-handler error-page="/error"/>
     </security:http>
 
     <!--
@@ -48,8 +73,8 @@
             <!--用户信息-->
             <security:user-service>
                 <!--用户信息-->
-                <security:user name="admin" password="123456" authorities="ROLE_ADMIN"/>
-                <security:user name="chensj" password="123456" authorities="ROLE_USER"/>
+                <security:user name="admin" password="1" authorities="ROLE_ADMIN"/>
+                <security:user name="chensj" password="1" authorities="ROLE_USER"/>
             </security:user-service>
         </security:authentication-provider>
     </security:authentication-manager>

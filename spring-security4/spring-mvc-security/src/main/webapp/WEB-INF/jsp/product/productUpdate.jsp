@@ -12,6 +12,7 @@
     <title>productUpdate</title>
 </head>
 <body>
-productUpdate 商品修改页面
+productUpdate 商品修改页面 <br>
+<a href="${pageContext.request.contextPath}/">首页</a>
 </body>
 </html>

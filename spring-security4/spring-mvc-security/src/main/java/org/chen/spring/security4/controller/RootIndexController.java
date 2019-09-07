@@ -19,4 +19,9 @@ public class RootIndexController {
     public String loginIndex() {
         return "login";
     }
+
+    @RequestMapping(value = {"/error"})
+    public String errorIndex() {
+        return "error";
+    }
 }

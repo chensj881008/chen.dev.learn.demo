@@ -12,6 +12,7 @@
     <title>productAdd</title>
 </head>
 <body>
-productAdd 商品新增页面
+productAdd 商品新增页面 <br>
+<a href="${pageContext.request.contextPath}/">首页</a>
 </body>
 </html>

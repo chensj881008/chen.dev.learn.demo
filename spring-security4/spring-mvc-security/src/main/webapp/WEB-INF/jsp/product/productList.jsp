@@ -12,6 +12,7 @@
     <title>productList</title>
 </head>
 <body>
-productList 商品查询页面
+productList 商品查询页面 <br>
+<a href="${pageContext.request.contextPath}/">首页</a>
 </body>
 </html>
