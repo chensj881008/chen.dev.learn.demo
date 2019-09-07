@@ -161,11 +161,75 @@ InterceptorStatusToken token = super.beforeInvocation(fi);
 >
 > 这种方式处理处于硬编码状态，实际开发中应该是采用数据库模式来实现上述处理
 
-#### 接口方式处理认证与权限信息
+#### UserDetailService接口处理认证与权限信息
 
 另一种方式即通过实现接口的方式，在方法中通过代码的方式来判断用户的登录
 
+关键点：使用UserDetailService接口来实现访问权限控制
 
+1. 实现接口
+
+   ```java
+   /**
+    * 用户登录后权限信息数据
+    *
+    * @author chensj
+    */
+   public class SpringSecurityUserDetailService implements UserDetailsService {
+       /**
+        * 通过用户名获取用户信息
+        *
+        * @param username 用户名
+        * @return userDetail信息
+        * @throws UsernameNotFoundException
+        */
+       @Override
+       public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+           // UserDetails 封装用户数据的接口
+           // 获取用户信息
+           User user = null;
+           if ("admin".equals(username)) {
+               /*
+                * 下面这句话等同于配置文件中的
+                * <security:user name="admin" password="1" authorities="ROLE_ADMIN"/>
+                * AuthorityUtils.commaSeparatedStringToAuthorityList("ROLE_ADMIN")
+                * 是Spring Security封装的一种权限信息转换的工具类方法
+                */
+               user = new User("admin", "1",
+                       AuthorityUtils.commaSeparatedStringToAuthorityList("ROLE_ADMIN"));
+           } else if ("chensj".equals(username)) {
+               user = new User("chensj", "1",
+                       AuthorityUtils.commaSeparatedStringToAuthorityList("ROLE_USER"));
+           }
+           return user;
+       }
+   }
+   ```
+
+2. 注入UserDetailService
+
+   ```xml
+   <!--注入UserDetailService-->
+       <bean id="springSecurityUserDetailService" class="org.chen.spring.security4.service.SpringSecurityUserDetailService"/>
+   ```
+
+3. 替换
+
+   ```xml
+    <security:authentication-manager>
+           <!--配置用户权限提供信息-->
+           <security:authentication-provider user-service-ref="springSecurityUserDetailService">
+               <!--用户信息-->
+   <!--            <security:user-service>-->
+   <!--                &lt;!&ndash;用户信息&ndash;&gt;-->
+   <!--                <security:user name="admin" password="1" authorities="ROLE_ADMIN"/>-->
+   <!--                <security:user name="chensj" password="1" authorities="ROLE_USER"/>-->
+   <!--            </security:user-service>-->
+           </security:authentication-provider>
+       </security:authentication-manager>
+   ```
+
+   
 
 #### 权限不足处理
 
@@ -175,4 +239,6 @@ InterceptorStatusToken token = super.beforeInvocation(fi);
 <!--指定全局权限不足错误页面-->
 <security:access-denied-handler error-page="/error"/>
 ```
+
+#### 自定义登录成功与登录失败的处理逻辑
 

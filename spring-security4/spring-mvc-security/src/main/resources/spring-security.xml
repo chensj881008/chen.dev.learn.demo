@@ -69,13 +69,15 @@
     -->
     <security:authentication-manager>
         <!--配置用户权限提供信息-->
-        <security:authentication-provider>
+        <security:authentication-provider user-service-ref="springSecurityUserDetailService">
             <!--用户信息-->
-            <security:user-service>
-                <!--用户信息-->
-                <security:user name="admin" password="1" authorities="ROLE_ADMIN"/>
-                <security:user name="chensj" password="1" authorities="ROLE_USER"/>
-            </security:user-service>
+<!--            <security:user-service>-->
+<!--                &lt;!&ndash;用户信息&ndash;&gt;-->
+<!--                <security:user name="admin" password="1" authorities="ROLE_ADMIN"/>-->
+<!--                <security:user name="chensj" password="1" authorities="ROLE_USER"/>-->
+<!--            </security:user-service>-->
         </security:authentication-provider>
     </security:authentication-manager>
+    <!--注入UserDetailService-->
+    <bean id="springSecurityUserDetailService" class="org.chen.spring.security4.service.SpringSecurityUserDetailService"/>
 </beans>
