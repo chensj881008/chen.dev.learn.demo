@@ -11,6 +11,7 @@
     <name>Spring Security 4</name>
     <modules>
         <module>spring-mvc-security</module>
+        <module>spring-sercurity-ssm</module>
     </modules>
 
     <properties>
