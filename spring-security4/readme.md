@@ -240,5 +240,136 @@ InterceptorStatusToken token = super.beforeInvocation(fi);
 <security:access-denied-handler error-page="/error"/>
 ```
 
-#### 自定义登录成功与登录失败的处理逻辑
+#### 自定义登录成功与失败的处理逻辑
 
+比如说在前后端分离架构中，登录失败或者授权失败的时候应该返回json数据，这个时候就是需要处理自定义登录成功与失败的处理逻辑
+
+* **关键接口**
+  1. 登录成功处理：AuthenticationSuccessHandler
+  2. 登录失败处理：AuthenticationFailureHandler
+
+##### 登录成功逻辑
+
+1. 实现接口
+
+   ```java
+   /**
+    * 登录成功后的自定义处理逻辑
+    * 实现{@link org.springframework.security.web.authentication.AuthenticationSuccessHandler} 接口
+    *
+    * @author chensj
+    * @date 2019-9-8 17:17:07
+    */
+   public class SpringAuthenticationSuccessHandler implements AuthenticationSuccessHandler {
+       /**
+        * jackson 提供工具类，用于转换对象到json字符串
+        */
+       private ObjectMapper objectMapper = new ObjectMapper();
+   
+       /**
+        * 登录成功后的处理逻辑
+        *
+        * @param request        请求
+        * @param response       响应
+        * @param authentication 代表认证成功后的信息
+        * @throws IOException      异常
+        * @throws ServletException 异常
+        */
+       @Override
+       public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+           // 返回登录成功json给前端
+           Map map = new HashMap(8);
+           map.put("success", true);
+           String json = objectMapper.writeValueAsString(map);
+           response.setContentType("text/json;charset=utf-8");
+           response.getWriter().write(json);
+       }
+   }
+   ```
+
+2. 注册bean
+
+   ```xml
+    <!--自定义登录成功处理类-->
+   <bean id="springAuthenticationSuccessHandler"
+             class="org.chen.spring.security4.handler.SpringAuthenticationSuccessHandler"/>
+   ```
+
+3. 配置登录成功handler
+
+   在<security:form-login>标签上指定authentication-success-handler-ref
+
+   ```xml
+   <security:form-login login-page="/userLogin"
+                                password-parameter="pass"
+                                username-parameter="user"
+                                login-processing-url="/user/login"
+                                default-target-url="/index"
+                                authentication-success-handler-ref="springAuthenticationSuccessHandler"/>
+   ```
+
+4. 登录成功返回值为：
+
+   ```json
+   {"success":true}
+   ```
+
+
+##### 登录失败逻辑
+
+1. 实现接口
+
+   ```java
+   public class SpringAuthenticationFailureHandler implements AuthenticationFailureHandler {
+       /**
+        * jackson 提供工具类，用于转换对象到json字符串
+        */
+       private ObjectMapper objectMapper = new ObjectMapper();
+   
+       /**
+        * 登录失败处理逻辑
+        *
+        * @param request   请求
+        * @param response  响应
+        * @param exception 异常
+        * @throws IOException      异常
+        * @throws ServletException 异常
+        */
+       @Override
+       public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception) throws IOException, ServletException {
+           // 前端登录失败处，返回json给前端
+           Map map = new HashMap();
+           map.put("success", false);
+           String json = objectMapper.writeValueAsString(map);
+           response.getWriter().write(json);
+       }
+   }
+   ```
+
+2. 注册bean
+
+   ```xml
+   <!--自定义登录失败处理类-->
+   <bean id="springAuthenticationFailureHandler"
+             class="org.chen.spring.security4.handler.SpringAuthenticationFailureHandler"/>
+   ```
+
+3. 配置登录失败handler
+
+   ```xml
+    <security:form-login login-page="/userLogin"
+                                password-parameter="pass"
+                                username-parameter="user"
+                                login-processing-url="/user/login"
+                                default-target-url="/index"
+                                authentication-success-handler-ref="springAuthenticationSuccessHandler"
+                                authentication-failure-handler-ref="springAuthenticationFailureHandler"/>
+   ```
+
+4. 登录失败返回值为：
+
+   ```json
+   {"success":false}
+   ```
+
+   

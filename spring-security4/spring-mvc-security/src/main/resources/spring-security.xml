@@ -56,7 +56,9 @@
                              password-parameter="pass"
                              username-parameter="user"
                              login-processing-url="/user/login"
-                             default-target-url="/index"/>
+                             default-target-url="/index"
+                             authentication-success-handler-ref="springAuthenticationSuccessHandler"
+                             authentication-failure-handler-ref="springAuthenticationFailureHandler"/>
         <!--关闭Spring Security CSRF机制-->
         <security:csrf disabled="true"/>
         <!--指定全局权限不足错误页面-->
@@ -71,13 +73,20 @@
         <!--配置用户权限提供信息-->
         <security:authentication-provider user-service-ref="springSecurityUserDetailService">
             <!--用户信息-->
-<!--            <security:user-service>-->
-<!--                &lt;!&ndash;用户信息&ndash;&gt;-->
-<!--                <security:user name="admin" password="1" authorities="ROLE_ADMIN"/>-->
-<!--                <security:user name="chensj" password="1" authorities="ROLE_USER"/>-->
-<!--            </security:user-service>-->
+            <!--            <security:user-service>-->
+            <!--                &lt;!&ndash;用户信息&ndash;&gt;-->
+            <!--                <security:user name="admin" password="1" authorities="ROLE_ADMIN"/>-->
+            <!--                <security:user name="chensj" password="1" authorities="ROLE_USER"/>-->
+            <!--            </security:user-service>-->
         </security:authentication-provider>
     </security:authentication-manager>
     <!--注入UserDetailService-->
-    <bean id="springSecurityUserDetailService" class="org.chen.spring.security4.service.SpringSecurityUserDetailService"/>
+    <bean id="springSecurityUserDetailService"
+          class="org.chen.spring.security4.service.SpringSecurityUserDetailService"/>
+    <!--自定义登录成功处理类-->
+    <bean id="springAuthenticationSuccessHandler"
+          class="org.chen.spring.security4.handler.SpringAuthenticationSuccessHandler"/>
+    <!--自定义登录失败处理类-->
+    <bean id="springAuthenticationFailureHandler"
+          class="org.chen.spring.security4.handler.SpringAuthenticationFailureHandler"/>
 </beans>
