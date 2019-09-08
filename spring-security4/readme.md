@@ -1,6 +1,8 @@
 # Spring Security 
 
-## Spring Security 执行原理
+## 一、Spring Security 入门开发
+
+### Spring Security 执行原理
 
 * 底层：核心springSecurityFilterChain
   由若干个过滤器组成的
@@ -27,9 +29,9 @@ InterceptorStatusToken token = super.beforeInvocation(fi);
 
 来获取之前Filter处理的结果，从而判断是否可以登录、是否具有权限等
 
-## Spring Security 学习
+### Spring Security 学习
 
-### Spring Security配置文件
+#### Spring Security配置文件
 
 ```xml
 <security:http>
@@ -57,7 +59,7 @@ InterceptorStatusToken token = super.beforeInvocation(fi);
 >
 > 前者主要负责定义认证授权的方式，后者则是定义用户认证、权限等的信息
 
-### 自定义登录页面
+#### 自定义登录页面
 
 * 通过在spring-security.xml文件中设置，将过滤器链设置修改为form-login的方式
 
@@ -115,11 +117,70 @@ InterceptorStatusToken token = super.beforeInvocation(fi);
    <security:csrf disabled="true"/>
   ```
 
-### 认证与授权
+#### 认证与授权
 
-在Spring Security的配置文件中提供两部分内容， 上面说的都是关于拦截器链的配置方面的的东西，下面来说一下认证方面的东西，如下内容即是一种使用硬编码的方式来指定用户登录的信息
+在Spring Security的配置文件中提供两部分内容， 上面说的都是关于拦截器链的配置方面的的东西，下面来说一下认证方面的东西，有两种方式：
 
-#### 配置文件处理认证与权限信息
+* 用户权限配置在配置文件中，指定好权限信息
+* 用户权限配置在数据库中，从数据库中获取配置的权限信息
+
+##### 认证与用户接口
+
+在Spring Security中，用户认证与授权服务都是提供了相应的接口，比如在认证与授权的时候，获取用户信息就需要实现`UserDetailsService`接口，用户需要实现`UserDetails`接口。
+
+* `UserDetailsService`接口
+
+  这个接口只有一个方法`loadUserByUsername`，根据用户名获取用户信息，包含用户信息和权限信息
+
+  ```java
+  public interface UserDetailsService {
+  	UserDetails loadUserByUsername(String username) throws UsernameNotFoundException;
+  }
+  ```
+
+* `UserDetails`接口
+
+  ```java
+  public interface UserDetails extends Serializable {
+  	/**
+  	 * 返回用户权限信息
+  	 */
+  	Collection<? extends GrantedAuthority> getAuthorities();
+  
+  	/**
+  	 * 返回用户密码，用于做用户登录认证
+  	 */
+  	String getPassword();
+  
+  	/**
+  	 * 返回用户名，用于做用户登录认证
+  	 */
+  	String getUsername();
+  
+  	/**
+  	 *用户的帐户是否已过期。过期的帐户不能登录
+  	 */
+  	boolean isAccountNonExpired();
+  
+  	/**
+  	 * 用户是锁定还是解锁。锁定的帐户不能登录
+  	 */
+  	boolean isAccountNonLocked();
+  
+  	/**
+  	 * 用户的凭据（密码）是否已过期。过期的密码不能登录
+  	 */
+  	boolean isCredentialsNonExpired();
+  
+  	/**
+  	 * 用户是否可用，禁用的用户不能登录
+  	 */
+  	boolean isEnabled();
+      // 上面这四个方法在返回false的时候，都会抛出对应的错误
+  }
+  ```
+
+##### 配置文件处理认证与权限信息
 
 * 权限管理器配置
 
@@ -161,7 +222,7 @@ InterceptorStatusToken token = super.beforeInvocation(fi);
 >
 > 这种方式处理处于硬编码状态，实际开发中应该是采用数据库模式来实现上述处理
 
-#### UserDetailService接口处理认证与权限信息
+##### UserDetailService接口处理认证与权限信息
 
 另一种方式即通过实现接口的方式，在方法中通过代码的方式来判断用户的登录
 
@@ -231,7 +292,7 @@ InterceptorStatusToken token = super.beforeInvocation(fi);
 
    
 
-#### 权限不足处理
+##### 权限不足处理
 
 在<security:http>标签中指定全局权限不足时候的页面
 
@@ -240,7 +301,7 @@ InterceptorStatusToken token = super.beforeInvocation(fi);
 <security:access-denied-handler error-page="/error"/>
 ```
 
-#### 自定义登录成功与失败的处理逻辑
+##### 自定义登录成功与失败的处理逻辑
 
 比如说在前后端分离架构中，登录失败或者授权失败的时候应该返回json数据，这个时候就是需要处理自定义登录成功与失败的处理逻辑
 
@@ -248,7 +309,7 @@ InterceptorStatusToken token = super.beforeInvocation(fi);
   1. 登录成功处理：AuthenticationSuccessHandler
   2. 登录失败处理：AuthenticationFailureHandler
 
-##### 登录成功逻辑
+###### 登录成功逻辑
 
 1. 实现接口
 
@@ -315,7 +376,7 @@ InterceptorStatusToken token = super.beforeInvocation(fi);
    ```
 
 
-##### 登录失败逻辑
+###### 登录失败逻辑
 
 1. 实现接口
 
@@ -372,4 +433,158 @@ InterceptorStatusToken token = super.beforeInvocation(fi);
    {"success":false}
    ```
 
-   
+
+## 二、Spring Security4 + SSM权限管理
+
+### RBAC模型
+
+​		基于角色的权限访问控制(Role-Based Access Control)，在RBAC中，权限与角色相关联，用户通过成为适当角色的成员而得到这些角色的权限。这就极大地简化了权限的管理。在一个组织中，角色是为了完成各种工作而创造，用户则依据它的责任和资格来被指派相应的角色，用户可以很容易地从一个角色被指派到另一个角色。角色可依新的需求和系统的合并而赋予新的权限，而权限也可根据需要而从某角色中回收。角色与角色的关系可以建立起来以囊括更广泛的客观情况。
+
+### 数据库表结构设计与创建
+
+基于RBAC权限模型，设计权限相关表：
+
+1. 用户
+2. 角色
+3. 权限
+
+>  用户 和 角色   多对多的关系
+>
+>  角色 和 权限   多对多的关系
+
+```sql
+-- 删除数据库
+drop database if exists security4;
+-- 创建数据库
+CREATE DATABASE security4 DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+/*
+Navicat MySQL Data Transfer
+
+Source Server         : 192.168.31.217
+Source Server Version : 80016
+Source Host           : 192.168.31.217:3306
+Source Database       : security4
+
+Target Server Type    : MYSQL
+Target Server Version : 80016
+File Encoding         : 65001
+
+Date: 2019-09-08 22:42:52
+*/
+
+SET FOREIGN_KEY_CHECKS=0;
+
+-- ----------------------------
+-- Table structure for SYS_AUTH
+-- ----------------------------
+DROP TABLE IF EXISTS `SYS_AUTH`;
+CREATE TABLE `SYS_AUTH` (
+  `AUTH_ID` int(11) NOT NULL AUTO_INCREMENT COMMENT '权限ID',
+  `AUTH_NAME` varchar(64) DEFAULT NULL COMMENT '权限名称',
+  `AUTH_FLAG` varchar(64) DEFAULT NULL COMMENT '权限标识符',
+  PRIMARY KEY (`AUTH_ID`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8 COMMENT='权限表';
+
+-- ----------------------------
+-- Records of SYS_AUTH
+-- ----------------------------
+INSERT INTO `SYS_AUTH` VALUES ('1', '产品查询', 'ROLE_PRODUCT_LIST');
+INSERT INTO `SYS_AUTH` VALUES ('2', '产品新增', 'ROLE_PRODUCT_ADD');
+INSERT INTO `SYS_AUTH` VALUES ('3', '产品修改', 'ROLE_PRODUCT_UPDATE');
+INSERT INTO `SYS_AUTH` VALUES ('4', '产品删除', 'ROLE_PRODUCT_DELETE');
+
+-- ----------------------------
+-- Table structure for SYS_ROLE
+-- ----------------------------
+DROP TABLE IF EXISTS `SYS_ROLE`;
+CREATE TABLE `SYS_ROLE` (
+  `ROLE_ID` int(11) NOT NULL AUTO_INCREMENT COMMENT '角色ID',
+  `ROLE_NAME` varchar(64) DEFAULT NULL COMMENT '角色名',
+  `ROLE_DESC` varchar(64) DEFAULT NULL COMMENT '角色说明',
+  PRIMARY KEY (`ROLE_ID`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8 COMMENT='角色表';
+
+-- ----------------------------
+-- Records of SYS_ROLE
+-- ----------------------------
+INSERT INTO `SYS_ROLE` VALUES ('1', '普通用户', '普通用户');
+INSERT INTO `SYS_ROLE` VALUES ('2', '管理员', '管理员');
+
+-- ----------------------------
+-- Table structure for SYS_ROLE_AUTH
+-- ----------------------------
+DROP TABLE IF EXISTS `SYS_ROLE_AUTH`;
+CREATE TABLE `SYS_ROLE_AUTH` (
+  `ROLE_ID` int(11) NOT NULL COMMENT '角色ID',
+  `AUTH_ID` int(11) NOT NULL COMMENT '权限ID',
+  KEY `FK_ROLE_AUTH_ROLE` (`ROLE_ID`),
+  KEY `FK_ROLE_AUTH_AUTH` (`AUTH_ID`),
+  CONSTRAINT `FK_ROLE_AUTH_AUTH` FOREIGN KEY (`AUTH_ID`) REFERENCES `SYS_AUTH` (`AUTH_ID`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `FK_ROLE_AUTH_ROLE` FOREIGN KEY (`ROLE_ID`) REFERENCES `SYS_ROLE` (`ROLE_ID`) ON DELETE RESTRICT ON UPDATE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='角色权限表';
+
+-- ----------------------------
+-- Records of SYS_ROLE_AUTH
+-- ----------------------------
+INSERT INTO `SYS_ROLE_AUTH` VALUES ('2', '1');
+INSERT INTO `SYS_ROLE_AUTH` VALUES ('2', '2');
+INSERT INTO `SYS_ROLE_AUTH` VALUES ('1', '3');
+INSERT INTO `SYS_ROLE_AUTH` VALUES ('1', '4');
+
+-- ----------------------------
+-- Table structure for SYS_USER
+-- ----------------------------
+DROP TABLE IF EXISTS `SYS_USER`;
+CREATE TABLE `SYS_USER` (
+  `USER_ID` int(11) NOT NULL AUTO_INCREMENT COMMENT '用户ID',
+  `USER_NAME` varchar(64) DEFAULT NULL COMMENT '用户名',
+  `REAL_NAME` varchar(64) DEFAULT NULL COMMENT '真实姓名',
+  `PASSWORD` varchar(64) DEFAULT NULL COMMENT '密码',
+  `CREATE_DATE` date DEFAULT NULL COMMENT '创建日期',
+  `LAST_LOGIN_DATE` date DEFAULT NULL COMMENT '最后登录日期',
+  `ACCOUNT_ENABLED` int(11) DEFAULT NULL COMMENT '是否可用',
+  `ACCOUNT_EXPIRED` int(11) DEFAULT NULL COMMENT '是否过期',
+  `ACCOUNT_LOCKED` int(11) DEFAULT NULL COMMENT '是否锁定',
+  `PASSWORD_EXPIRED` int(11) DEFAULT NULL COMMENT '证书是否过期',
+  PRIMARY KEY (`USER_ID`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8 COMMENT='用户表';
+
+-- ----------------------------
+-- Records of SYS_USER
+-- ----------------------------
+INSERT INTO `SYS_USER` VALUES ('1', 'admin', 'admin', '123456', '2019-09-08', '2019-09-08', '0', '0', '0', '0');
+INSERT INTO `SYS_USER` VALUES ('2', 'chensj', '陈世杰', '123456', '2019-09-08', '2019-09-08', '0', '0', '0', '0');
+
+-- ----------------------------
+-- Table structure for SYS_USER_ROLE
+-- ----------------------------
+DROP TABLE IF EXISTS `SYS_USER_ROLE`;
+CREATE TABLE `SYS_USER_ROLE` (
+  `USER_ID` int(11) DEFAULT NULL COMMENT '用户ID',
+  `ROLE_ID` int(11) DEFAULT NULL COMMENT '角色ID',
+  KEY `FK_USER_ROLE_USER` (`USER_ID`),
+  KEY `FK_USER_ROLE_ROLE` (`ROLE_ID`),
+  CONSTRAINT `FK_USER_ROLE_ROLE` FOREIGN KEY (`ROLE_ID`) REFERENCES `SYS_ROLE` (`ROLE_ID`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `FK_USER_ROLE_USER` FOREIGN KEY (`USER_ID`) REFERENCES `SYS_USER` (`USER_ID`) ON DELETE RESTRICT ON UPDATE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='用户角色表';
+
+-- ----------------------------
+-- Records of SYS_USER_ROLE
+-- ----------------------------
+INSERT INTO `SYS_USER_ROLE` VALUES ('1', '2');
+INSERT INTO `SYS_USER_ROLE` VALUES ('2', '1');
+```
+
+
+
+### Spring Security4 + SSM 环境搭建
+
+### 用户查询与权限查询持久层方法
+
+### 自定义UserDetailService实现动态数据访问
+
+### PasswordEncoder密码加密
+
+### 自定义图形验证码
+
+## 三、Spring Security4 + Spring Boot权限管理
