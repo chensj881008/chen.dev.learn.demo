@@ -579,6 +579,82 @@ INSERT INTO `SYS_USER_ROLE` VALUES ('2', '1');
 
 ### Spring Security4 + SSM 环境搭建
 
+* 在原项目基础上导入MyBatis的依赖
+
+```xml
+	<dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-jdbc</artifactId>
+      <version>${spring.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.mybatis</groupId>
+      <artifactId>mybatis</artifactId>
+      <version>3.4.4</version>
+    </dependency>
+    <dependency>
+      <groupId>org.mybatis</groupId>
+      <artifactId>mybatis-spring</artifactId>
+      <version>1.3.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.alibaba</groupId>
+      <artifactId>druid</artifactId>
+      <version>1.1.12</version>
+    </dependency>
+    <dependency>
+      <groupId>mysql</groupId>
+      <artifactId>mysql-connector-java</artifactId>
+      <version>8.0.16</version>
+    </dependency>
+```
+
+* 配置数据库
+
+  创建jdbc.properties文件，指定数据库连接池使用的参数
+
+  ```properties
+  jdbc.url=jdbc:mysql://192.168.31.217:3306/security4
+  jdbc.driverClass=com.mysql.cj.jdbc.Driver
+  jdbc.username=root
+  jdbc.password=123456
+  ```
+
+* 整合
+
+  从原项目中拷贝配置文件到当前项目，然后修改applicationContext.xml文件
+
+```xml
+	<!--读取jdbc.properties-->
+    <context:property-placeholder location="classpath:jdbc.properties"/>
+    <!--数据库连接池-->
+    <bean id="datasource" class="com.alibaba.druid.pool.DruidDataSource">
+        <property name="url" value="${jdbc.url}"/>
+        <property name="driverClassName" value="${jdbc.driverClass}"/>
+        <property name="username" value="${jdbc.username}"/>
+        <property name="maxActive" value="10"/>
+        <property name="maxWait" value="3000"/>
+    </bean>
+    <!--spring 整合MyBatis-->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="datasource"/>
+        <!--别名扫描-->
+        <property name="typeAliasesPackage" value="org.chen.spring.security.ssm.domain"/>
+    </bean>
+    <!--Mapper接口扫描-->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="org.chen.spring.security.ssm.mapper"/>
+    </bean>
+    <!--事务-->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="datasource"/>
+    </bean>
+    <!--事务注解支持-->
+    <tx:annotation-driven/>
+    <!--Service包扫描-->
+    <context:component-scan base-package="org.chen.spring.security.ssm.service"/>
+```
+
 ### 用户查询与权限查询持久层方法
 
 ### 自定义UserDetailService实现动态数据访问

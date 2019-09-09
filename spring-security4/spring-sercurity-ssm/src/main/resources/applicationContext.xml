@@ -39,6 +39,6 @@
     </bean>
     <!--事务注解支持-->
     <tx:annotation-driven/>
-    <!--基础包扫描-->
+    <!--Service包扫描-->
     <context:component-scan base-package="org.chen.spring.security.ssm.service"/>
 </beans>
