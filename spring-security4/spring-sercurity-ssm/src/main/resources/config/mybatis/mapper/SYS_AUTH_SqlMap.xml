@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.chen.spring.security.ssm.mapper.SysAuthDao">
+
+    <resultMap id="sysAuthResultForList" type="org.chen.spring.security.ssm.domain.SysAuth">
+         <result column="AUTH_ID" property="authId" jdbcType="INTEGER" />
+         <result column="AUTH_NAME" property="authName" jdbcType="VARCHAR" />
+         <result column="AUTH_FLAG" property="authFlag" jdbcType="VARCHAR" />
+    </resultMap>
+
+    <resultMap id="sysAuthResult" type="org.chen.spring.security.ssm.domain.SysAuth" extends="sysAuthResultForList">
+
+    </resultMap>
+
+    <sql id="sql-sysAuth">
+        <if test="(authId != null )"> and t.AUTH_ID = #{authId} </if>
+        <if test="(authName != null and authName != '')"> and t.AUTH_NAME = #{authName} </if>
+        <if test="(authFlag != null and authFlag != '')"> and t.AUTH_FLAG = #{authFlag} </if>
+    </sql>
+
+    <insert id="insertSysAuth" parameterType="org.chen.spring.security.ssm.domain.SysAuth">
+        <selectKey resultType="String"  order="BEFORE"  keyProperty="id">SELECT CAST(UUID() AS char(36)) AS ID </selectKey>
+
+        INSERT INTO SYS_AUTH
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="(authId != null )"> AUTH_ID , </if>
+            <if test="(authName != null and authName != '')"> AUTH_NAME , </if>
+            <if test="(authFlag != null and authFlag != '')"> AUTH_FLAG , </if>
+        </trim>
+        VALUES
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="(authId != null )"> #{authId , jdbcType= INTEGER },  </if>
+            <if test="(authName != null and authName != '')">#{authName , jdbcType= VARCHAR },  </if>
+            <if test="(authFlag != null and authFlag != '')">#{authFlag , jdbcType= VARCHAR },  </if>
+        </trim>
+    </insert>
+
+    <update id="updateSysAuth" parameterType="org.chen.spring.security.ssm.domain.SysAuth">
+        UPDATE SYS_AUTH
+        <set>
+            <trim suffixOverrides=",">
+                <if test="(authId != null )"> AUTH_ID = #{authId , jdbcType= INTEGER }, </if>
+                <if test="(authName != null and authName != '')"> AUTH_NAME = #{authName , jdbcType= VARCHAR }, </if>
+                <if test="(authFlag != null and authFlag != '')"> AUTH_FLAG = #{authFlag , jdbcType= VARCHAR }, </if>
+            </trim>
+        </set>
+        <where>
+            <if test="(authId != null )"> and AUTH_ID = #{ authId, jdbcType= INTEGER }   </if>
+
+            <if test="(authId == null ) and (map.pks != null and map.pks.size > 0)">
+                and (AUTH_ID) in
+                <foreach item="item" collection="map.pks" open="(" separator="," close=")"> #{item}</foreach>
+            </if>
+        </where>
+    </update>
+
+    <delete id="deleteSysAuth" parameterType="org.chen.spring.security.ssm.domain.SysAuth">
+        delete from  SYS_AUTH
+        <where>
+            <if test="(authId != null )"> and AUTH_ID = #{ authId, jdbcType= INTEGER }   </if>
+            <if test="(authId == null ) and (map.pks != null and map.pks.size > 0)">
+                and (AUTH_ID) in
+                <foreach item="item" collection="map.pks" open="(" separator="," close=")"> #{item}</foreach>
+            </if>
+        </where>
+    </delete>
+
+
+    <select id="selectSysAuth" resultMap="sysAuthResult" parameterType="org.chen.spring.security.ssm.domain.SysAuth">
+        SELECT * FROM SYS_AUTH t
+        <where>
+            <include refid="sql-sysAuth" />
+        </where>
+    </select>
+
+    <select id="selectSysAuthList" resultMap="sysAuthResultForList" parameterType="org.chen.spring.security.ssm.domain.SysAuth">
+        SELECT
+        <if test="row.count != null and row.count != ''"> top ${row.count} </if>
+        * FROM SYS_AUTH t
+        <where>
+            <include refid="sql-sysAuth" />
+        </where>
+        ORDER BY t.AUTH_ID ASC
+    </select>
+
+    <select id="selectSysAuthCount" resultType="int" parameterType="org.chen.spring.security.ssm.domain.SysAuth">
+        select count(1) from  SYS_AUTH t
+        <where>
+            <include refid="sql-sysAuth" />
+        </where>
+    </select>
+    <select id="selectSysAuthPageList" resultMap="sysAuthResult" parameterType="org.chen.spring.security.ssm.domain.SysAuth">
+     SELECT * FROM (
+     SELECT t.*
+     FROM SYS_AUTH t
+     <where>
+         <include refid="sql-sysAuth" />
+     </where>
+     order by t.AUTH_ID asc
+     ) TEMP_TABLE limit  #{row.first} , #{row.first} + #{row.count}
+    </select>
+
+</mapper>

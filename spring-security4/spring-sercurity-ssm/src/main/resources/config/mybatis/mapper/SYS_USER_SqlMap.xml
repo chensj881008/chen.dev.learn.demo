@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.chen.spring.security.ssm.mapper.SysUserDao">
+
+    <resultMap id="sysUserResultForList" type="org.chen.spring.security.ssm.domain.SysUser">
+         <result column="USER_ID" property="userId" jdbcType="INTEGER" />
+         <result column="USER_NAME" property="userName" jdbcType="VARCHAR" />
+         <result column="REAL_NAME" property="realName" jdbcType="VARCHAR" />
+         <result column="PASSWORD" property="password" jdbcType="VARCHAR" />
+         <result column="CREATE_DATE" property="createDate" jdbcType="DATE" />
+         <result column="LAST_LOGIN_DATE" property="lastLoginDate" jdbcType="DATE" />
+         <result column="ACCOUNT_ENABLED" property="accountEnabled" jdbcType="INTEGER" />
+         <result column="ACCOUNT_EXPIRED" property="accountExpired" jdbcType="INTEGER" />
+         <result column="ACCOUNT_LOCKED" property="accountLocked" jdbcType="INTEGER" />
+         <result column="PASSWORD_EXPIRED" property="passwordExpired" jdbcType="INTEGER" />
+    </resultMap>
+
+    <resultMap id="sysUserResult" type="org.chen.spring.security.ssm.domain.SysUser" extends="sysUserResultForList">
+
+    </resultMap>
+
+    <sql id="sql-sysUser">
+        <if test="(userId != null )"> and t.USER_ID = #{userId} </if>
+        <if test="(userName != null and userName != '')"> and t.USER_NAME = #{userName} </if>
+        <if test="(realName != null and realName != '')"> and t.REAL_NAME = #{realName} </if>
+        <if test="(password != null and password != '')"> and t.PASSWORD = #{password} </if>
+        <if test="(createDate != null )"> and t.CREATE_DATE = #{createDate} </if>
+        <if test="(lastLoginDate != null )"> and t.LAST_LOGIN_DATE = #{lastLoginDate} </if>
+        <if test="(accountEnabled != null )"> and t.ACCOUNT_ENABLED = #{accountEnabled} </if>
+        <if test="(accountExpired != null )"> and t.ACCOUNT_EXPIRED = #{accountExpired} </if>
+        <if test="(accountLocked != null )"> and t.ACCOUNT_LOCKED = #{accountLocked} </if>
+        <if test="(passwordExpired != null )"> and t.PASSWORD_EXPIRED = #{passwordExpired} </if>
+    </sql>
+
+    <insert id="insertSysUser" parameterType="org.chen.spring.security.ssm.domain.SysUser">
+        <selectKey resultType="String"  order="BEFORE"  keyProperty="id">SELECT CAST(UUID() AS char(36)) AS ID </selectKey>
+
+        INSERT INTO SYS_USER
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="(userId != null )"> USER_ID , </if>
+            <if test="(userName != null and userName != '')"> USER_NAME , </if>
+            <if test="(realName != null and realName != '')"> REAL_NAME , </if>
+            <if test="(password != null and password != '')"> PASSWORD , </if>
+            <if test="(createDate != null )"> CREATE_DATE , </if>
+            <if test="(lastLoginDate != null )"> LAST_LOGIN_DATE , </if>
+            <if test="(accountEnabled != null )"> ACCOUNT_ENABLED , </if>
+            <if test="(accountExpired != null )"> ACCOUNT_EXPIRED , </if>
+            <if test="(accountLocked != null )"> ACCOUNT_LOCKED , </if>
+            <if test="(passwordExpired != null )"> PASSWORD_EXPIRED , </if>
+        </trim>
+        VALUES
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="(userId != null )"> #{userId , jdbcType= INTEGER },  </if>
+            <if test="(userName != null and userName != '')">#{userName , jdbcType= VARCHAR },  </if>
+            <if test="(realName != null and realName != '')">#{realName , jdbcType= VARCHAR },  </if>
+            <if test="(password != null and password != '')">#{password , jdbcType= VARCHAR },  </if>
+            <if test="(createDate != null )"> #{createDate , jdbcType= DATE },  </if>
+            <if test="(lastLoginDate != null )"> #{lastLoginDate , jdbcType= DATE },  </if>
+            <if test="(accountEnabled != null )"> #{accountEnabled , jdbcType= INTEGER },  </if>
+            <if test="(accountExpired != null )"> #{accountExpired , jdbcType= INTEGER },  </if>
+            <if test="(accountLocked != null )"> #{accountLocked , jdbcType= INTEGER },  </if>
+            <if test="(passwordExpired != null )"> #{passwordExpired , jdbcType= INTEGER },  </if>
+        </trim>
+    </insert>
+
+    <update id="updateSysUser" parameterType="org.chen.spring.security.ssm.domain.SysUser">
+        UPDATE SYS_USER
+        <set>
+            <trim suffixOverrides=",">
+                <if test="(userId != null )"> USER_ID = #{userId , jdbcType= INTEGER }, </if>
+                <if test="(userName != null and userName != '')"> USER_NAME = #{userName , jdbcType= VARCHAR }, </if>
+                <if test="(realName != null and realName != '')"> REAL_NAME = #{realName , jdbcType= VARCHAR }, </if>
+                <if test="(password != null and password != '')"> PASSWORD = #{password , jdbcType= VARCHAR }, </if>
+                <if test="(createDate != null )"> CREATE_DATE = #{createDate , jdbcType= DATE }, </if>
+                <if test="(lastLoginDate != null )"> LAST_LOGIN_DATE = #{lastLoginDate , jdbcType= DATE }, </if>
+                <if test="(accountEnabled != null )"> ACCOUNT_ENABLED = #{accountEnabled , jdbcType= INTEGER }, </if>
+                <if test="(accountExpired != null )"> ACCOUNT_EXPIRED = #{accountExpired , jdbcType= INTEGER }, </if>
+                <if test="(accountLocked != null )"> ACCOUNT_LOCKED = #{accountLocked , jdbcType= INTEGER }, </if>
+                <if test="(passwordExpired != null )"> PASSWORD_EXPIRED = #{passwordExpired , jdbcType= INTEGER }, </if>
+            </trim>
+        </set>
+        <where>
+            <if test="(userId != null )"> and USER_ID = #{ userId, jdbcType= INTEGER }   </if>
+
+            <if test="(userId == null ) and (map.pks != null and map.pks.size > 0)">
+                and (USER_ID) in
+                <foreach item="item" collection="map.pks" open="(" separator="," close=")"> #{item}</foreach>
+            </if>
+        </where>
+    </update>
+
+    <delete id="deleteSysUser" parameterType="org.chen.spring.security.ssm.domain.SysUser">
+        delete from  SYS_USER
+        <where>
+            <if test="(userId != null )"> and USER_ID = #{ userId, jdbcType= INTEGER }   </if>
+            <if test="(userId == null ) and (map.pks != null and map.pks.size > 0)">
+                and (USER_ID) in
+                <foreach item="item" collection="map.pks" open="(" separator="," close=")"> #{item}</foreach>
+            </if>
+        </where>
+    </delete>
+
+
+    <select id="selectSysUser" resultMap="sysUserResult" parameterType="org.chen.spring.security.ssm.domain.SysUser">
+        SELECT * FROM SYS_USER t
+        <where>
+            <include refid="sql-sysUser" />
+        </where>
+    </select>
+
+    <select id="selectSysUserList" resultMap="sysUserResultForList" parameterType="org.chen.spring.security.ssm.domain.SysUser">
+        SELECT
+        <if test="row.count != null and row.count != ''"> top ${row.count} </if>
+        * FROM SYS_USER t
+        <where>
+            <include refid="sql-sysUser" />
+        </where>
+        ORDER BY t.USER_ID ASC
+    </select>
+
+    <select id="selectSysUserCount" resultType="int" parameterType="org.chen.spring.security.ssm.domain.SysUser">
+        select count(1) from  SYS_USER t
+        <where>
+            <include refid="sql-sysUser" />
+        </where>
+    </select>
+    <select id="selectSysUserPageList" resultMap="sysUserResult" parameterType="org.chen.spring.security.ssm.domain.SysUser">
+     SELECT * FROM (
+     SELECT t.*
+     FROM SYS_USER t
+     <where>
+         <include refid="sql-sysUser" />
+     </where>
+     order by t.USER_ID asc
+     ) TEMP_TABLE limit  #{row.first} , #{row.first} + #{row.count}
+    </select>
+
+</mapper>

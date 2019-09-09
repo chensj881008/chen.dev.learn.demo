@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.chen.spring.security.ssm.mapper.SysRoleAuthDao">
+
+    <resultMap id="sysRoleAuthResultForList" type="org.chen.spring.security.ssm.domain.SysRoleAuth">
+         <result column="ROLE_ID" property="roleId" jdbcType="INTEGER" />
+         <result column="AUTH_ID" property="authId" jdbcType="INTEGER" />
+    </resultMap>
+
+    <resultMap id="sysRoleAuthResult" type="org.chen.spring.security.ssm.domain.SysRoleAuth" extends="sysRoleAuthResultForList">
+
+    </resultMap>
+
+    <sql id="sql-sysRoleAuth">
+        <if test="(roleId != null )"> and t.ROLE_ID = #{roleId} </if>
+        <if test="(authId != null )"> and t.AUTH_ID = #{authId} </if>
+    </sql>
+
+    <insert id="insertSysRoleAuth" parameterType="org.chen.spring.security.ssm.domain.SysRoleAuth">
+        <selectKey resultType="String"  order="BEFORE"  keyProperty="id">SELECT CAST(UUID() AS char(36)) AS ID </selectKey>
+
+        INSERT INTO SYS_ROLE_AUTH
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="(roleId != null )"> ROLE_ID , </if>
+            <if test="(authId != null )"> AUTH_ID , </if>
+        </trim>
+        VALUES
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="(roleId != null )"> #{roleId , jdbcType= INTEGER },  </if>
+            <if test="(authId != null )"> #{authId , jdbcType= INTEGER },  </if>
+        </trim>
+    </insert>
+
+    <update id="updateSysRoleAuth" parameterType="org.chen.spring.security.ssm.domain.SysRoleAuth">
+        UPDATE SYS_ROLE_AUTH
+        <set>
+            <trim suffixOverrides=",">
+                <if test="(roleId != null )"> ROLE_ID = #{roleId , jdbcType= INTEGER }, </if>
+                <if test="(authId != null )"> AUTH_ID = #{authId , jdbcType= INTEGER }, </if>
+            </trim>
+        </set>
+        <where>
+            <if test="(roleId != null )"> and ROLE_ID = #{ roleId, jdbcType= INTEGER }   </if>
+
+            <if test="(authId != null )"> and AUTH_ID = #{ authId, jdbcType= INTEGER }   </if>
+
+            <if test="(roleId == null ) and (authId == null ) and (map.pks != null and map.pks.size > 0)">
+                and (ROLE_ID,AUTH_ID) in
+                <foreach item="item" collection="map.pks" open="(" separator="," close=")"> #{item}</foreach>
+            </if>
+        </where>
+    </update>
+
+    <delete id="deleteSysRoleAuth" parameterType="org.chen.spring.security.ssm.domain.SysRoleAuth">
+        delete from  SYS_ROLE_AUTH
+        <where>
+            <if test="(roleId != null )"> and ROLE_ID = #{ roleId, jdbcType= INTEGER }   </if>
+            <if test="(authId != null )"> and AUTH_ID = #{ authId, jdbcType= INTEGER }   </if>
+            <if test="(roleId == null ) and (authId == null ) and (map.pks != null and map.pks.size > 0)">
+                and (ROLE_ID,AUTH_ID) in
+                <foreach item="item" collection="map.pks" open="(" separator="," close=")"> #{item}</foreach>
+            </if>
+        </where>
+    </delete>
+
+
+    <select id="selectSysRoleAuth" resultMap="sysRoleAuthResult" parameterType="org.chen.spring.security.ssm.domain.SysRoleAuth">
+        SELECT * FROM SYS_ROLE_AUTH t
+        <where>
+            <include refid="sql-sysRoleAuth" />
+        </where>
+    </select>
+
+    <select id="selectSysRoleAuthList" resultMap="sysRoleAuthResultForList" parameterType="org.chen.spring.security.ssm.domain.SysRoleAuth">
+        SELECT
+        <if test="row.count != null and row.count != ''"> top ${row.count} </if>
+        * FROM SYS_ROLE_AUTH t
+        <where>
+            <include refid="sql-sysRoleAuth" />
+        </where>
+        ORDER BY t.ROLE_ID,t.AUTH_ID ASC
+    </select>
+
+    <select id="selectSysRoleAuthCount" resultType="int" parameterType="org.chen.spring.security.ssm.domain.SysRoleAuth">
+        select count(1) from  SYS_ROLE_AUTH t
+        <where>
+            <include refid="sql-sysRoleAuth" />
+        </where>
+    </select>
+    <select id="selectSysRoleAuthPageList" resultMap="sysRoleAuthResult" parameterType="org.chen.spring.security.ssm.domain.SysRoleAuth">
+     SELECT * FROM (
+     SELECT t.*
+     FROM SYS_ROLE_AUTH t
+     <where>
+         <include refid="sql-sysRoleAuth" />
+     </where>
+     order by t.ROLE_ID,t.AUTH_ID asc
+     ) TEMP_TABLE limit  #{row.first} , #{row.first} + #{row.count}
+    </select>
+
+</mapper>
