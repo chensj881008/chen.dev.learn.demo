@@ -20,8 +20,6 @@
     </sql>
 
     <insert id="insertSysAuth" parameterType="org.chen.spring.security.ssm.domain.SysAuth">
-        <selectKey resultType="String"  order="BEFORE"  keyProperty="id">SELECT CAST(UUID() AS char(36)) AS ID </selectKey>
-
         INSERT INTO SYS_AUTH
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="(authId != null )"> AUTH_ID , </if>

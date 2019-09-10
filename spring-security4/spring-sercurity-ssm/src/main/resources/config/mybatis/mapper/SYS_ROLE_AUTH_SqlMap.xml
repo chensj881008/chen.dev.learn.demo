@@ -18,8 +18,6 @@
     </sql>
 
     <insert id="insertSysRoleAuth" parameterType="org.chen.spring.security.ssm.domain.SysRoleAuth">
-        <selectKey resultType="String"  order="BEFORE"  keyProperty="id">SELECT CAST(UUID() AS char(36)) AS ID </selectKey>
-
         INSERT INTO SYS_ROLE_AUTH
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="(roleId != null )"> ROLE_ID , </if>

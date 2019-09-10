@@ -34,8 +34,6 @@
     </sql>
 
     <insert id="insertSysUser" parameterType="org.chen.spring.security.ssm.domain.SysUser">
-        <selectKey resultType="String"  order="BEFORE"  keyProperty="id">SELECT CAST(UUID() AS char(36)) AS ID </selectKey>
-
         INSERT INTO SYS_USER
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="(userId != null )"> USER_ID , </if>
