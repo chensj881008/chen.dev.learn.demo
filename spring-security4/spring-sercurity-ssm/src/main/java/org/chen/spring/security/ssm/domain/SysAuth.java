@@ -1,7 +1,8 @@
 package org.chen.spring.security.ssm.domain;
 
-import java.io.Serializable; 
+import java.io.Serializable;
 
+import lombok.EqualsAndHashCode;
 import org.chen.spring.security.ssm.domain.BaseDomain;
 
 import org.apache.ibatis.type.Alias; 
@@ -17,6 +18,7 @@ import lombok.Data;
  */
 @Alias("sysAuth")
 @Data
+@EqualsAndHashCode(callSuper = false)
 public class SysAuth extends BaseDomain implements Serializable {
 
     private static final long serialVersionUID = -1L;
