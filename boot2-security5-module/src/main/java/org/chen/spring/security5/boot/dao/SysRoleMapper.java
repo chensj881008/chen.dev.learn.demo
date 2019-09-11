@@ -6,6 +6,8 @@ import org.chen.spring.security5.boot.domain.SysRole;
 import org.springframework.stereotype.Repository;
 
 /**
+ * 角色DAO层
+ *
  * @author chensj
  * @date 2019-09-11 15:39
  */

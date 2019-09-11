@@ -6,6 +6,8 @@ import org.chen.spring.security5.boot.domain.SysUser;
 import org.springframework.stereotype.Repository;
 
 /**
+ * 用户 DAO
+ *
  * @author chensj
  * @date 2019-09-11 15:38
  */

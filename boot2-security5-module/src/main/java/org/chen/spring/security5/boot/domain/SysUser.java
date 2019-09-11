@@ -5,6 +5,8 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
+ * 用户表
+ *
  * @author chensj
  * @date 2019-09-11 15:36
  */

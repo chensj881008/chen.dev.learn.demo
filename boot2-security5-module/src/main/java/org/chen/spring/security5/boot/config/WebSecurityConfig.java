@@ -37,6 +37,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .passwordEncoder(new PasswordEncoder() {
                     @Override
                     public String encode(CharSequence charSequence) {
+                        // 直接返回明文密码
                         return charSequence.toString();
                     }
 
