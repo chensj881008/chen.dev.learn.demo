@@ -64,7 +64,10 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .passwordParameter("password")
                 .and()
                 // 退出
-                .logout().permitAll();
+                .logout().permitAll()
+                 // 自动登录
+                 .and().rememberMe()
+                 ;
         // 关闭CSRF跨域
         http.csrf().disable();
     }

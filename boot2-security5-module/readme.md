@@ -520,3 +520,79 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 }
 ```
 
+## 2、自动登录
+
+在上面的入门项目的基础上，增加自动登录的功能
+
+自动登录的实现分为两种方式，一种是借助cookie的方式，一种是使用数据库方式
+
+### 2.1 修改登录页面
+
+在登陆页添加自动登录的选项，注意自动登录字段的 name 必须是 `remember-me` ：
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>登陆</title>
+</head>
+<body>
+<h1>登陆</h1>
+<!--注意 action与method方法都是固定的，这是有spring security设定好的，可以在配置项目中修改-->
+<form method="post" action="/login">
+    <div>
+        <label for="username">用户名：</label>
+        <input id="username" type="text" name="username">
+    </div>
+    <div>
+        <label for="password">密码：</label>
+        <input id="password" type="password" name="password">
+    </div>
+    <div>
+        <label><input type="checkbox" name="remember-me"/>自动登录</label>
+        <button type="submit">立即登陆</button>
+    </div>
+</form>
+</body>
+</html>
+```
+
+### 2.2 实现方式
+
+#### 2.2.1 cookie方式存储
+
+这种方式十分简单，只要在 WebSecurityConfig 中的 configure() 方法添加一个 `rememberMe()` 即可,如下所示：
+
+```java
+ @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http.authorizeRequests()
+                // 任何请求 都需要认证
+                // 如果存在不需要认证的url,可以使用 .antMatchers().permitAll()来设置
+                .anyRequest().authenticated()
+                .and()
+                // 设置登录页
+                .formLogin().loginPage("/login")
+                // 设置登录成功也
+                .defaultSuccessUrl("/").permitAll()
+                // 自定义登陆用户名和密码参数，默认为username和password
+                .usernameParameter("username")
+                .passwordParameter("password")
+                .and()
+                // 退出
+                .logout().permitAll()
+                 // 自动登录
+                 .and().rememberMe()
+                 ;
+        // 关闭CSRF跨域
+        http.csrf().disable();
+    }
+```
+
+当我们登陆时勾选自动登录时，会自动在 Cookie 中保存一个名为 `remember-me` 的cookie，默认有效期为2周，其值是一个加密字符串：
+
+![](https://img-blog.csdn.net/20180509100451811)
+
+#### 2.2.2 数据库方式存储
+
