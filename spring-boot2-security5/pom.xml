@@ -33,6 +33,7 @@
         <module>boot2-security5-base-mapper</module>
         <module>boot2-security5-base-entity</module>
         <module>boot2-security5-module-exception</module>
+        <module>boot2-security5-module-custom-login</module>
     </modules>
 
     <dependencyManagement>
