@@ -22,4 +22,15 @@
     <name>Spring Boot Security Custom Login Module</name>
 
 
+    <description>
+        实现验证码验证呢，思考一下，应该有以下几种实现方式：
+        1.登录表单提交前发送 AJAX 验证验证码
+            这种方式不考虑，常规处理方案
+        2.使用自定义过滤器(Filter)，在Spring security校验前验证验证码合法性
+            boot2-security5-module-custom-login-filter
+        3.和用户名、密码一起发送到后台，在Spring security中进行验证
+            boot2-security5-module-custom-login-security
+    </description>
+
+
 </project>
