@@ -1328,3 +1328,244 @@ Spring Security 对于用户名/密码登录方式是通过 UsernamePasswordAuth
     }
 ```
 
+现在来测试下，当验证码错误后：
+
+![验证码错误](https://img-blog.csdn.net/20180509145853658)
+
+### 4.2.3 Spring Security验证
+
+使用过滤器就已经实现了验证码功能，但其实它和`AJAX`验证差别不大。
+
+* `AJAX`是在提交前发一个请求，请求返回成功就提交，否则不提交；
+* 过滤器是先验证验证码，验证成功就让`Spring Security`验证用户名和密码；验证失败，则产生异常·。
+
+如果我们要做的需求是用户登录是需要多个验证字段，不单单是用户名和密码，那么使用过滤器会让逻辑变得复杂，这时候可以考虑自定义`Spring Security`的验证逻辑了…
+
+#### 4.2.3.1 WebAuthenticationDetails
+
+我们知道`Spring security`默认只会处理用户名和密码信息。这时候就要请出我们的主角——**`WebAuthenticationDetails`**。
+
+> WebAuthenticationDetails: 该类提供了获取用户登录时携带的额外信息的功能，默认提供了 remoteAddress 与 sessionId 信息。
+
+我们需要实现自定义的 WebAuthenticationDetails，并在其中加入我们的验证码：
+
+```java
+/**
+ * 获取用户登录时携带的额外信息
+ *
+ * @author chensj
+ * @date 2019-09-12 10:43
+ */
+public class CustomWebAuthenticationDetails extends WebAuthenticationDetails {
+
+
+    private static final long serialVersionUID = 8451867313411066177L;
+    /**
+     * 前台传入验证码
+     */
+    private final String verifyCode;
+
+    /**
+     * Records the remote address and will also set the session Id if a session already
+     * exists (it won't create one).
+     *
+     * @param request that the authentication request was received from
+     */
+    public CustomWebAuthenticationDetails(HttpServletRequest request) {
+        super(request);
+        // verifyCode为页面中验证码的name
+        verifyCode = request.getParameter("verifyCode");
+    }
+
+    /**
+     * 获取验证码
+     *
+     * @return
+     */
+    public String getVerifyCode() {
+        return verifyCode;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        // 将从表单中获取的验证码信息添加到参数中
+        sb.append(super.toString()).append("; VerifyCode: ").append(this.getVerifyCode());
+        return sb.toString();
+    }
+}
+```
+
+#### 4.2.3.2 AuthenticationDetailsSource
+
+自定义了`WebAuthenticationDetails`后，我们还需要将其放入`AuthenticationDetailsSource`中来替换原本的`WebAuthenticationDetails` ，因此还得实现自定义`AuthenticationDetailsSource`：
+
+```java
+/**
+ * 该接口用于在Spring Security登录过程中对用户的登录信息的详细信息进行填充
+ *
+ * @author chensj
+ * @date 2019-09-12 10:54
+ */
+@Component("authenticationDetailsSource")
+public class CustomAuthenticationDetailsSource implements AuthenticationDetailsSource<HttpServletRequest,
+        WebAuthenticationDetails> {
+    /**
+     * 该类内容将原本的 WebAuthenticationDetails 替换为了我们的 CustomWebAuthenticationDetails
+     *
+     * @param request 请求
+     * @return d
+     */
+    @Override
+    public WebAuthenticationDetails buildDetails(HttpServletRequest request) {
+        return new CustomWebAuthenticationDetails(request);
+    }
+}
+```
+
+该类内容将原本的`WebAuthenticationDetails`替换为了我们的 `CustomWebAuthenticationDetails`。
+
+然后我们将`CustomAuthenticationDetailsSource`注入`Spring Security`中，替换掉默认的 `AuthenticationDetailsSource`。
+
+修改`WebSecurityConfig`，将其注入，然后在`config()`中使用 `authenticationDetailsSource(authenticationDetailsSource)`方法来指定它。
+
+```java
+@Autowired
+private AuthenticationDetailsSource<HttpServletRequest, WebAuthenticationDetails> authenticationDetailsSource;
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http.authorizeRequests()
+                // 任何请求 都需要认证
+                // 如果存在不需要认证的url,可以使用 .antMatchers().permitAll()来设置
+                // 如果有允许匿名的url，填在下面
+                .antMatchers("/getVerificationCode").permitAll()
+                .anyRequest().authenticated()
+                .and()
+                // 设置登录页
+                .formLogin().loginPage("/login")
+                // 设置登录成功也
+                .defaultSuccessUrl("/").permitAll()
+                // 登录失败Url
+                .failureUrl("/login/error")
+                // 指定authenticationDetailsSource
+                .authenticationDetailsSource(authenticationDetailsSource)
+                // 自定义登陆用户名和密码参数，默认为username和password
+                //.usernameParameter("username")
+                //.passwordParameter("password")
+                .and()
+                // 自定义过滤器验证验证码
+                // 在账户密码验证之前验证
+                // 第二个参数就是在该filter之前验证
+                //.addFilterBefore(new VerificationCodeFilter(), UsernamePasswordAuthenticationFilter.class)
+                // 退出
+                .logout().permitAll()
+                // 自动登录
+                .and()
+                // 自动登录
+                // 只使用 rememberMe 则是保存在token中
+                // 使用tokenRepository后，会产生一个token，与用户名信息进行对应存放在数据库persistent_logins中
+                .rememberMe()
+                // 指定token Repository
+                .tokenRepository(persistentTokenRepository())
+                // 有效时间：单位s
+                .tokenValiditySeconds(60)
+                .userDetailsService(userDetailService);
+        ;
+        // 关闭CSRF跨域
+        http.csrf().disable();
+    }
+```
+
+#### 4.2.3.3 AuthenticationProvider
+
+至此我们通过自定义`WebAuthenticationDetails`和`AuthenticationDetailsSource`将验证码和用户名、密码一起带入了`Spring Security`中，下面我们需要将它取出来。
+
+这里需要我们自定义`AuthenticationProvider`，需要注意的是，如果是我们自己实现`AuthenticationProvider`，那么我们就需要自己做密码校验了。
+
+```java
+/**
+ * 自定义认证器
+ *
+ * @author chensj
+ * @date 2019-09-12 11:05
+ */
+@Slf4j
+@Component
+public class CustomAuthenticationProvider implements AuthenticationProvider {
+
+    @Autowired
+    private CustomUserDetailServiceImpl userDetailsService;
+
+    @Override
+    public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+        // 获取用户输入的用户名和密码
+        String inputName = authentication.getName();
+        String inputPassword = authentication.getCredentials().toString();
+
+        CustomWebAuthenticationDetails details = (CustomWebAuthenticationDetails) authentication.getDetails();
+
+        String verifyCode = details.getVerifyCode();
+        if (!validateVerify(verifyCode)) {
+            throw new DisabledException("验证码输入错误");
+        }
+
+        // userDetails为数据库中查询到的用户信息
+        UserDetails userDetails = userDetailsService.loadUserByUsername(inputName);
+
+        // 如果是自定义AuthenticationProvider，需要手动密码校验
+        if (!userDetails.getPassword().equals(inputPassword)) {
+            throw new BadCredentialsException("密码错误");
+        }
+
+        return new UsernamePasswordAuthenticationToken(inputName, inputPassword, userDetails.getAuthorities());
+    }
+
+    private boolean validateVerify(String inputVerify) {
+        //获取当前线程绑定的request对象
+        HttpServletRequest request =
+                ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+        // 不分区大小写
+        // 这个validateCode是在servlet中存入session的名字
+        String validateCode = ((String) request.getSession().getAttribute("validateCode")).toLowerCase();
+        inputVerify = inputVerify.toLowerCase();
+
+        log.info("验证码:[{}] 用户输入:[{}]", validateCode, inputVerify);
+
+        return validateCode.equals(inputVerify);
+    }
+
+    @Override
+    public boolean supports(Class<?> authentication) {
+        // 这里不要忘记，和UsernamePasswordAuthenticationToken比较
+        return authentication.equals(UsernamePasswordAuthenticationToken.class);
+    }
+}
+```
+
+最后在 `WebSecurityConfig` 中将其注入，并在 config 方法中通过 `auth.authenticationProvider()` 指定使用。
+
+```java
+@Autowired
+private CustomAuthenticationProvider customAuthenticationProvider;
+ @Override
+ protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+     // 用户只需要认证账号与密码的时候使用
+     //auth.userDetailsService(userDetailService)
+     //        .passwordEncoder(new PasswordEncoder() {
+     //            @Override
+     //            public String encode(CharSequence charSequence) {
+     //                // 直接返回明文密码
+     //                return charSequence.toString();
+     //            }
+     //
+     //            @Override
+     //            public boolean matches(CharSequence charSequence, String s) {
+     //                return s.equals(charSequence.toString());
+     //            }
+     //        });
+     // 使用自定义认证器
+     auth.authenticationProvider(customAuthenticationProvider);
+ }
+```
+
+是不是比较复杂，为了实现该需求自定义了 `WebAuthenticationDetails`、`AuthenticationDetailsSource`、`AuthenticationProvider`，让我们运行一下程序，当输入错误验证码时：

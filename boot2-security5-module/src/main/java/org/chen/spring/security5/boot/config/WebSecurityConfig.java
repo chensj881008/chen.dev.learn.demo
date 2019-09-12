@@ -1,10 +1,12 @@
 package org.chen.spring.security5.boot.config;
 
 import org.chen.spring.security5.boot.filter.VerificationCodeFilter;
+import org.chen.spring.security5.boot.security.CustomAuthenticationProvider;
 import org.chen.spring.security5.boot.service.CustomUserDetailServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationDetailsSource;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -13,9 +15,11 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.WebAuthenticationDetails;
 import org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.sql.DataSource;
 
 /**
@@ -38,6 +42,10 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     private CustomUserDetailServiceImpl userDetailService;
     @Autowired
     private DataSource dataSource;
+    @Autowired
+    private AuthenticationDetailsSource<HttpServletRequest, WebAuthenticationDetails> authenticationDetailsSource;
+    @Autowired
+    private CustomAuthenticationProvider customAuthenticationProvider;
 
     /**
      * 注册一个bean 用于存储token数据
@@ -55,20 +63,22 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-
-        auth.userDetailsService(userDetailService)
-                .passwordEncoder(new PasswordEncoder() {
-                    @Override
-                    public String encode(CharSequence charSequence) {
-                        // 直接返回明文密码
-                        return charSequence.toString();
-                    }
-
-                    @Override
-                    public boolean matches(CharSequence charSequence, String s) {
-                        return s.equals(charSequence.toString());
-                    }
-                });
+        // 用户只需要认证账号与密码的时候使用
+        //auth.userDetailsService(userDetailService)
+        //        .passwordEncoder(new PasswordEncoder() {
+        //            @Override
+        //            public String encode(CharSequence charSequence) {
+        //                // 直接返回明文密码
+        //                return charSequence.toString();
+        //            }
+        //
+        //            @Override
+        //            public boolean matches(CharSequence charSequence, String s) {
+        //                return s.equals(charSequence.toString());
+        //            }
+        //        });
+        // 使用自定义认证器
+        auth.authenticationProvider(customAuthenticationProvider);
     }
 
     @Override
@@ -86,13 +96,16 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .defaultSuccessUrl("/").permitAll()
                 // 登录失败Url
                 .failureUrl("/login/error")
+                // 指定authenticationDetailsSource
+                .authenticationDetailsSource(authenticationDetailsSource)
                 // 自定义登陆用户名和密码参数，默认为username和password
                 //.usernameParameter("username")
                 //.passwordParameter("password")
                 .and()
+                // 自定义过滤器验证验证码
                 // 在账户密码验证之前验证
                 // 第二个参数就是在该filter之前验证
-                .addFilterBefore(new VerificationCodeFilter(), UsernamePasswordAuthenticationFilter.class)
+                //.addFilterBefore(new VerificationCodeFilter(), UsernamePasswordAuthenticationFilter.class)
                 // 退出
                 .logout().permitAll()
                 // 自动登录
