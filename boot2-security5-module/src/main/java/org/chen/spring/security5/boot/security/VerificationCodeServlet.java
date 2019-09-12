@@ -1,4 +1,4 @@
-package org.chen.spring.security5.boot.servlet;
+package org.chen.spring.security5.boot.security;
 
 import javax.imageio.ImageIO;
 import javax.servlet.ServletException;

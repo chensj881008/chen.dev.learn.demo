@@ -1569,3 +1569,227 @@ private CustomAuthenticationProvider customAuthenticationProvider;
 ```
 
 是不是比较复杂，为了实现该需求自定义了 `WebAuthenticationDetails`、`AuthenticationDetailsSource`、`AuthenticationProvider`，让我们运行一下程序，当输入错误验证码时：
+
+![验证码错误](https://img-blog.csdn.net/20180509145853658)
+
+## 5.权限控制
+
+### 5.1 数据准备
+
+#### 5.1.1 建表和初始化数据
+
+* 创建`sys_permission`权限表
+
+  ```sql
+  CREATE TABLE `sys_permission` (
+    `id` int(11) NOT NULL AUTO_INCREMENT,
+    `url` varchar(255) DEFAULT NULL,
+    `role_id` int(11) DEFAULT NULL,
+    `permission` varchar(255) DEFAULT NULL,
+    PRIMARY KEY (`id`),
+    KEY `fk_roleId` (`role_id`),
+    CONSTRAINT `fk_roleId` FOREIGN KEY (`role_id`) REFERENCES `sys_role` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;
+  ```
+
+* 初始化数据
+
+  内容就是两条数据，`url`+`role_id`+`permission` 唯一标识了一个角色访问某一 url 时的权限，其中权限暂定为 c、r、u、d，即增删改查。
+
+  ```sql
+  INSERT INTO `security5`.`sys_permission` (`url`, `role_id`, `permission`) VALUES ( '/admin', '1', 'c,r,u,d');
+  INSERT INTO `security5`.`sys_permission` (`url`, `role_id`, `permission`) VALUES ( '/admin', '2', 'c');
+  
+  ```
+
+#### 5.2 创建POJO、Mapper、Service
+
+1. pojo
+
+```java 
+/**
+ * @author chensj
+ * @date 2019-09-12 11:25
+ */
+@Data
+public class SysPermission implements Serializable {
+
+    private static final long serialVersionUID = -7103488938939776567L;
+
+    private Integer id;
+
+    private String url;
+
+    private Integer roleId;
+
+    private String permission;
+
+    private List permissions;
+
+    // 省略除permissions外的getter/setter
+
+    public List getPermissions() {
+        return Arrays.asList(this.permission.trim().split(","));
+    }
+
+    public void setPermissions(List permissions) {
+        this.permissions = permissions;
+    }
+
+}
+```
+
+这里需要注意的时相比于数据库，多了一个 `permissions` 属性，该字段将 `permission` **按逗号分割**为了 list
+
+2. mapper
+
+```java
+/**
+ * @author chensj
+ * @date 2019-09-12 11:28
+ */
+@Mapper
+public interface SysPermissionMapper {
+    /**
+     * 根据角色ID获取全部权限
+     *
+     * @param roleId 角色ID
+     * @return list
+     */
+    @Select("SELECT * FROM sys_permission WHERE role_id=#{roleId}")
+    List<SysPermission> listByRoleId(Integer roleId);
+}
+
+```
+
+3. service
+
+```java
+@Service
+public class SysPermissionService {
+    @Autowired
+    private SysPermissionMapper permissionMapper;
+
+    /**
+     * 获取指定角色所有权限
+     */
+    public List<SysPermission> listByRoleId(Integer roleId) {
+        return permissionMapper.listByRoleId(roleId);
+    }
+}
+```
+Service中有一个方法，根据`roleId`获取所有的`SysPermission`
+
+4. controller
+
+```java
+ @RequestMapping("/admin")
+@ResponseBody
+@PreAuthorize("hasPermission('/admin','r')")
+public String printAdminRead() {
+    return "如果你看见这句话，说明你访问/admin路径具有r权限";
+}
+
+@RequestMapping("/admin/c")
+@ResponseBody
+@PreAuthorize("hasPermission('/admin','c')")
+public String printAdminCreate() {
+    return "如果你看见这句话，说明你访问/admin路径具有c权限";
+}
+```
+让我们修改下我们要访问的接口，`@PreAuthorize("hasPermission('/admin','r')")`是关键，参数1指明了访问该接口需要的url，参数2指明了访问该接口需要的权限。
+### 5.2  PermissionEvaluator
+
+我们需要自定义对`hasPermission()`方法的处理，就需要自定义`PermissionEvaluator`，创建类`CustomPermissionEvaluator`，实现 `PermissionEvaluator`接口。
+
+```java
+@Slf4j
+@Component
+public class CustomPermissionEvaluator implements PermissionEvaluator {
+    @Autowired
+    private SysPermissionService permissionService;
+    @Autowired
+    private SysRoleService roleService;
+    @Autowired
+    private CustomUserDetailServiceImpl userDetailService;
+
+    /**
+     * 通过 Authentication 取出登录用户的所有 Role
+     * 遍历每一个 Role，获取到每个Role的所有 Permission
+     * 遍历每一个 Permission，只要有一个 Permission 的 url 和传入的url相同，且该 Permission 中包含传入的权限，返回 true
+     * 如果遍历都结束，还没有找到，返回false
+     *
+     * @param authentication   认证信息
+     * @param targetUrl        访问 url
+     * @param targetPermission 访问 url 权限
+     * @return boolean
+     */
+    @Override
+    public boolean hasPermission(Authentication authentication, Object targetUrl, Object targetPermission) {
+        String username =  authentication.getPrincipal().toString();
+        // 获得loadUserByUsername()方法的结果
+        User user = (User) userDetailService.loadUserByUsername(username);
+        // 获得loadUserByUsername()中注入的角色
+        Collection<GrantedAuthority> authorities = user.getAuthorities();
+
+        log.info("targetUrl:[{}] , permission: [{}]", targetUrl, targetPermission);
+        // 遍历用户所有角色
+        for (GrantedAuthority authority : authorities) {
+            String roleName = authority.getAuthority();
+            Integer roleId = roleService.selectByName(roleName).getId();
+            // 得到角色所有的权限
+            List<SysPermission> permissionList = permissionService.listByRoleId(roleId);
+
+            // 遍历permissionList
+            for (SysPermission sysPermission : permissionList) {
+                // 获取权限集
+                List permissions = sysPermission.getPermissions();
+                // 如果访问的Url和权限用户符合的话，返回true
+                if (targetUrl.equals(sysPermission.getUrl())
+                        && permissions.contains(targetPermission)) {
+                    return true;
+                }
+            }
+
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean hasPermission(Authentication authentication, Serializable serializable, String s, Object o) {
+        return false;
+    }
+}
+```
+
+在 hasPermission() 方法中，参数 1 代表用户的权限身份，参数 2 参数 3 分别和 @PreAuthorize("hasPermission('/admin','r')") 中的参数对应，即访问 url 和权限。
+
+思路如下：
+
+* 通过 Authentication 取出登录用户的所有 Role
+* 遍历每一个 Role，获取到每个Role的所有 Permission
+* 遍历每一个 Permission，只要有一个 Permission 的 url 和传入的url相同，且该 Permission 中包含传入的权限，返回 true
+* 如果遍历都结束，还没有找到，返回false
+
+下面就是在 `WebSecurityConfig` 中注册 `CustomPermissionEvaluator`：
+
+```java
+    /**
+     * 注册一个bean 用于存储token数据
+     *
+     * @return tokenRepository
+     */
+@Bean
+public PersistentTokenRepository persistentTokenRepository() {
+    JdbcTokenRepositoryImpl tokenRepository = new JdbcTokenRepositoryImpl();
+    tokenRepository.setDataSource(dataSource);
+    // 如果token表不存在，使用下面语句可以初始化该表；若存在，请注释掉这条语句，否则会报错。
+    //tokenRepository.setCreateTableOnStartup(true);
+    return tokenRepository;
+}
+```
+
+当我使用角色为 `ROLE_USER` 的用户仍然能访问，因为该用户访问 `/admin` 路径具有 `r` 权限：
+
+![运行结果](https://img-blog.csdn.net/2018051519070954)

@@ -1,4 +1,4 @@
-package org.chen.spring.security5.boot.filter;
+package org.chen.spring.security5.boot.security;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.DisabledException;

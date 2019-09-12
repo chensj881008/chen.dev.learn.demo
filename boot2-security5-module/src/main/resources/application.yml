@@ -24,6 +24,8 @@ spring:
     restart:
       enabled: true
       exclude: WEB-INF/**
+  main:
+    allow-bean-definition-overriding: true
 #  开启Mybatis下划线命名转驼峰命名
 mybatis:
   configuration:

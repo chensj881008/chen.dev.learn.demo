@@ -22,4 +22,13 @@ public interface SysRoleMapper {
      */
     @Select("SELECT * FROM sys_role WHERE id = #{id}")
     SysRole selectById(Integer id);
+
+    /**
+     * 根据角色名称获取角色信息
+     *
+     * @param roleName 角色名称
+     * @return role
+     */
+    @Select("SELECT * FROM sys_role where name = #{roleName}")
+    SysRole selectByName(String roleName);
 }

@@ -1,6 +1,6 @@
 package org.chen.spring.security5.boot;
 
-import org.chen.spring.security5.boot.servlet.VerificationCodeServlet;
+import org.chen.spring.security5.boot.security.VerificationCodeServlet;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
