@@ -25,6 +25,7 @@
 
     <modules>
         <module>boot2-security5-first-module</module>
+        <module>boot2-security5-remeberme</module>
     </modules>
 
     <dependencyManagement>
