@@ -18,7 +18,23 @@ spring:
       pool-name: spring-security5-hikari
       max-lifetime: 1800000
       connection-timeout: 30000
+  devtools:
+    livereload:
+      enabled: true
+    restart:
+      enabled: true
+      exclude: WEB-INF/**
 #  开启Mybatis下划线命名转驼峰命名
 mybatis:
   configuration:
     map-underscore-to-camel-case: true
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+  endpoint:
+    shutdown:
+      enabled: false
+    health:
+      show-details: always

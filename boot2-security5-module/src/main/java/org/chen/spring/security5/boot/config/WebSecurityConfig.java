@@ -1,5 +1,6 @@
 package org.chen.spring.security5.boot.config;
 
+import org.chen.spring.security5.boot.filter.VerificationCodeFilter;
 import org.chen.spring.security5.boot.service.CustomUserDetailServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -11,6 +12,7 @@ import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
 
@@ -74,6 +76,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         http.authorizeRequests()
                 // 任何请求 都需要认证
                 // 如果存在不需要认证的url,可以使用 .antMatchers().permitAll()来设置
+                // 如果有允许匿名的url，填在下面
+                .antMatchers("/getVerificationCode").permitAll()
                 .anyRequest().authenticated()
                 .and()
                 // 设置登录页
@@ -83,9 +87,12 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 // 登录失败Url
                 .failureUrl("/login/error")
                 // 自定义登陆用户名和密码参数，默认为username和password
-                .usernameParameter("username")
-                .passwordParameter("password")
+                //.usernameParameter("username")
+                //.passwordParameter("password")
                 .and()
+                // 在账户密码验证之前验证
+                // 第二个参数就是在该filter之前验证
+                .addFilterBefore(new VerificationCodeFilter(), UsernamePasswordAuthenticationFilter.class)
                 // 退出
                 .logout().permitAll()
                 // 自动登录

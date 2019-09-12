@@ -922,3 +922,409 @@ public void onAuthenticationFailure(HttpServletRequest request,
 运行程序，当我们输入错误密码时：
 
 ![](https://img-blog.csdn.net/20180403145530517)
+
+## 4、自定义表单登录
+
+通过上面的项目，可以看出登录(login请求)的操作全部都是有Spring Security来处理的，如何实现自定义表单登录？比如说添加个验证码
+
+### 4.1 添加验证码
+
+验证码的 Servlet 代码，大家无需关心其内部实现，我也是百度直接捞了一个，直接复制即可。
+
+#### 4.1.1 验证码Servlet
+
+```java
+package org.chen.spring.security5.boot.servlet;
+
+import javax.imageio.ImageIO;
+import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.util.Random;
+
+/**
+ * 验证码 Servlet
+ *
+ * @author chensj
+ * @date 2019-09-12 10:03
+ */
+public class VerificationCodeServlet extends HttpServlet {
+    private static final long serialVersionUID = -5051097528828603895L;
+
+    /**
+     * 验证码图片的宽度。
+     */
+    private int width = 100;
+
+    /**
+     *  验证码图片的高度。
+     */
+    private int height = 30;
+
+    /**
+     * 验证码字符个数
+     */
+    private int codeCount = 4;
+
+    /**
+     * 字体高度
+     */
+    private int fontHeight;
+
+    /**
+     * 干扰线数量
+     */
+    private int interLine = 16;
+
+    /**
+     * 第一个字符的x轴值，因为后面的字符坐标依次递增，所以它们的x轴值是codeX的倍数
+     */
+    private int codeX;
+
+    /**
+     * codeY ,验证字符的y轴值，因为并行所以值一样
+     */
+    private int codeY;
+
+    /**
+     * codeSequence 表示字符允许出现的序列值
+     */
+    char[] codeSequence = { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
+            'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W',
+            'X', 'Y', 'Z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+
+    /**
+     * 初始化验证图片属性
+     */
+    @Override
+    public void init() throws ServletException {
+        // 从web.xml中获取初始信息
+        // 宽度
+        String strWidth = this.getInitParameter("width");
+        // 高度
+        String strHeight = this.getInitParameter("height");
+        // 字符个数
+        String strCodeCount = this.getInitParameter("codeCount");
+        // 将配置的信息转换成数值
+        try {
+            if (strWidth != null && strWidth.length() != 0) {
+                width = Integer.parseInt(strWidth);
+            }
+            if (strHeight != null && strHeight.length() != 0) {
+                height = Integer.parseInt(strHeight);
+            }
+            if (strCodeCount != null && strCodeCount.length() != 0) {
+                codeCount = Integer.parseInt(strCodeCount);
+            }
+        } catch (NumberFormatException e) {
+            e.printStackTrace();
+        }
+        //width-4 除去左右多余的位置，使验证码更加集中显示，减得越多越集中。
+        //codeCount+1     //等比分配显示的宽度，包括左右两边的空格
+        codeX = (width-4) / (codeCount+1);
+        //height - 10 集中显示验证码
+        fontHeight = height - 10;
+        codeY = height - 7;
+    }
+
+    /**
+     * @param request
+     * @param response
+     * @throws ServletException
+     * @throws java.io.IOException
+     */
+    @Override
+    protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, java.io.IOException {
+        // 定义图像buffer
+        BufferedImage buffImg = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        Graphics2D gd = buffImg.createGraphics();
+        // 创建一个随机数生成器类
+        Random random = new Random();
+        // 将图像填充为白色
+        gd.setColor(Color.LIGHT_GRAY);
+        gd.fillRect(0, 0, width, height);
+        // 创建字体，字体的大小应该根据图片的高度来定。
+        Font font = new Font("Times New Roman", Font.PLAIN, fontHeight);
+        // 设置字体。
+        gd.setFont(font);
+        // 画边框。
+        gd.setColor(Color.BLACK);
+        gd.drawRect(0, 0, width - 1, height - 1);
+        // 随机产生16条干扰线，使图象中的认证码不易被其它程序探测到。
+        gd.setColor(Color.gray);
+        for (int i = 0; i < interLine; i++) {
+            int x = random.nextInt(width);
+            int y = random.nextInt(height);
+            int xl = random.nextInt(12);
+            int yl = random.nextInt(12);
+            gd.drawLine(x, y, x + xl, y + yl);
+        }
+        // randomCode用于保存随机产生的验证码，以便用户登录后进行验证。
+        StringBuffer randomCode = new StringBuffer();
+        int red = 0, green = 0, blue = 0;
+        // 随机产生codeCount数字的验证码。
+        for (int i = 0; i < codeCount; i++) {
+            // 得到随机产生的验证码数字。
+            String strRand = String.valueOf(codeSequence[random.nextInt(36)]);
+            // 产生随机的颜色分量来构造颜色值，这样输出的每位数字的颜色值都将不同。
+            red = random.nextInt(255);
+            green = random.nextInt(255);
+            blue = random.nextInt(255);
+            // 用随机产生的颜色将验证码绘制到图像中。
+            gd.setColor(new Color(red,green,blue));
+            gd.drawString(strRand, (i + 1) * codeX, codeY);
+            // 将产生的四个随机数组合在一起。
+            randomCode.append(strRand);
+        }
+        // 将四位数字的验证码保存到Session中。
+        HttpSession session = request.getSession();
+        session.setAttribute("validateCode", randomCode.toString());
+        // 禁止图像缓存。
+        response.setHeader("Pragma", "no-cache");
+        response.setHeader("Cache-Control", "no-cache");
+        response.setDateHeader("Expires", 0);
+
+        response.setContentType("image/jpeg");
+        // 将图像输出到Servlet输出流中。
+        ServletOutputStream sos = response.getOutputStream();
+        ImageIO.write(buffImg, "jpeg", sos);
+        sos.close();
+    }
+}
+```
+
+然后在 Application 中注入该 Servlet：
+
+```java
+   /**
+    * 注入验证码servlet
+    *
+    * @return servlet
+    */
+    @Bean
+    public ServletRegistrationBean<VerificationCodeServlet> verificationCodeServlet() {
+        ServletRegistrationBean<VerificationCodeServlet> registrationBean =
+        new ServletRegistrationBean<>(new VerificationCodeServlet());
+        registrationBean.addUrlMappings("/getVerificationCode");
+        return registrationBean;
+    }
+```
+
+#### 4.1.2 修改 login.html
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>登陆</title>
+</head>
+<body>
+<h1>登陆</h1>
+<!--注意 action与method方法都是固定的，这是有spring security设定好的，可以在配置项目中修改-->
+<form method="post" action="/login">
+    <div>
+        <label for="username">用户名：</label>
+        <input id="username" type="text" name="username">
+    </div>
+    <div>
+        <label for="password">密码：</label>
+        <input id="password" type="password" name="password">
+    </div>
+    <div>
+        <input type="text" class="form-control" name="verifyCode" required="required" placeholder="验证码">
+        <img src="getVerificationCode" title="看不清，请点我" onclick="refresh(this)" onmouseover="mouseover(this)" />
+    </div>
+    <div>
+        <label><input type="checkbox" name="remember-me"/>自动登录</label>
+        <button type="submit">立即登陆</button>
+    </div>
+</form>
+<script>
+    function refresh(obj) { obj.src = "getVerificationCode?" + Math.random(); }
+
+    function mouseover(obj) { obj.style.cursor = "pointer"; }
+</script>
+</body>
+</html>
+```
+
+#### 4.1.3  添加匿名访问 Url
+
+不要忘记在 WebSecurityConfig 中允许该 Url 的匿名访问，不然没有登录是没有办法访问的：
+
+```java
+@Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http.authorizeRequests()
+                // 任何请求 都需要认证
+                // 如果存在不需要认证的url,可以使用 .antMatchers().permitAll()来设置
+                // 如果有允许匿名的url，填在下面
+                .antMatchers("/getVerificationCode").permitAll()
+                .anyRequest().authenticated()
+                .and()
+                // 设置登录页
+                .formLogin().loginPage("/login")
+                // 设置登录成功也
+                .defaultSuccessUrl("/").permitAll()
+                // 登录失败Url
+                .failureUrl("/login/error")
+                // 自定义登陆用户名和密码参数，默认为username和password
+                .usernameParameter("username")
+                .passwordParameter("password")
+                .and()
+                // 退出
+                .logout().permitAll()
+                // 自动登录
+                .and()
+                // 自动登录
+                // 只使用 rememberMe 则是保存在token中
+                // 使用tokenRepository后，会产生一个token，与用户名信息进行对应存放在数据库persistent_logins中
+                .rememberMe()
+                // 指定token Repository
+                .tokenRepository(persistentTokenRepository())
+                // 有效时间：单位s
+                .tokenValiditySeconds(60)
+                .userDetailsService(userDetailService);
+        ;
+        // 关闭CSRF跨域
+        http.csrf().disable();
+    }
+```
+
+完成上面的操作，验证码添加好了
+
+![](https://img-blog.csdn.net/20180509110841240)
+
+### 4.2 验证码验证分析
+
+上面的验证码是添加完成了，但是如何验证这个验证码的正确性，通常有以下几种方式
+
+* 登录表单提交前发送 AJAX 验证验证码
+* 使用自定义过滤器(Filter)，在 Spring security 校验前验证验证码合法性
+* 和用户名、密码一起发送到后台，在 Spring security 中进行验证
+
+### 4.2.1 AJAX验证
+
+使用 AJAX 方式验证和我们 Spring Security 框架就没有任何关系了，其实就是表单提交前先发个 HTTP 请求验证验证码，本篇不再赘述。
+
+### 4.2.2 过滤器验证
+
+使用过滤器的思路是：**在 Spring Security 处理登录验证请求前，验证验证码，如果正确，放行；如果不正确，调到异常**。
+
+#### 4.2.2.1 编写过滤器
+
+自定义一个过滤器，实现实现`OncePerRequestFilter`（该 Filter 保证每次请求一定会过滤），在 `isProtectedUrl() `方法中拦截了 POST 方式的 `/login`请求。
+
+在逻辑处理中从`request`中取出验证码，并进行验证，如果验证成功，放行；验证失败，手动生成异常。
+
+```java
+
+/**
+ * 验证码验证过滤器
+ *
+ * @author chensj
+ * @date 2019-09-12 10:24
+ */
+public class VerificationCodeFilter extends OncePerRequestFilter {
+
+    private static final PathMatcher pathMatcher = new AntPathMatcher();
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
+                                    FilterChain filterChain) throws ServletException, IOException {
+
+        if (isProtectedUrl(request)) {
+            String verifyCode = request.getParameter("verifyCode");
+            if (!validateVerify(verifyCode)) {
+                //手动设置异常
+                request.getSession().setAttribute(WebAttributes.AUTHENTICATION_EXCEPTION, new DisabledException(
+                        "验证码输入错误"));
+                // 转发到错误Url
+                request.getRequestDispatcher("/login/error").forward(request, response);
+            } else {
+                filterChain.doFilter(request, response);
+            }
+        } else {
+            filterChain.doFilter(request, response);
+        }
+    }
+
+    private boolean validateVerify(String inputVerify) {
+        //获取当前线程绑定的request对象
+        HttpServletRequest request =
+                ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+        // 不分区大小写
+        // 这个validateCode是在servlet中存入session的名字
+        String validateCode = ((String) request.getSession().getAttribute("validateCode")).toLowerCase();
+        inputVerify = inputVerify.toLowerCase();
+
+        System.out.println("验证码：" + validateCode + "用户输入：" + inputVerify);
+        return validateCode.equals(inputVerify);
+    }
+
+    /**
+     * 拦截 /login的POST请求
+     *
+     * @param request 请求
+     * @return boolean
+     */
+    private boolean isProtectedUrl(HttpServletRequest request) {
+        return "POST".equals(request.getMethod()) && pathMatcher.match("/login", request.getServletPath());
+    }
+}
+```
+
+#### 4.2.2.2 注入过滤器
+
+修改 WebSecurityConfig 的 configure 方法，添加一个 addFilterBefore() ，具有两个参数，作用是在参数二之前执行参数一设置的过滤器。
+
+Spring Security 对于用户名/密码登录方式是通过 UsernamePasswordAuthenticationFilter 处理的，我们在它之前执行验证码过滤器即可。
+
+```java
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http.authorizeRequests()
+                // 任何请求 都需要认证
+                // 如果存在不需要认证的url,可以使用 .antMatchers().permitAll()来设置
+                // 如果有允许匿名的url，填在下面
+                .antMatchers("/getVerificationCode").permitAll()
+                .anyRequest().authenticated()
+                .and()
+                // 设置登录页
+                .formLogin().loginPage("/login")
+                // 设置登录成功也
+                .defaultSuccessUrl("/").permitAll()
+                // 登录失败Url
+                .failureUrl("/login/error")
+                // 自定义登陆用户名和密码参数，默认为username和password
+                //.usernameParameter("username")
+                //.passwordParameter("password")
+                .and()
+                // 在账户密码验证之前验证
+                // 第二个参数就是在该filter之前验证
+                .addFilterBefore(new VerificationCodeFilter(), UsernamePasswordAuthenticationFilter.class)
+                // 退出
+                .logout().permitAll()
+                // 自动登录
+                .and()
+                // 自动登录
+                // 只使用 rememberMe 则是保存在token中
+                // 使用tokenRepository后，会产生一个token，与用户名信息进行对应存放在数据库persistent_logins中
+                .rememberMe()
+                // 指定token Repository
+                .tokenRepository(persistentTokenRepository())
+                // 有效时间：单位s
+                .tokenValiditySeconds(60)
+                .userDetailsService(userDetailService);
+        ;
+        // 关闭CSRF跨域
+        http.csrf().disable();
+    }
+```
+
