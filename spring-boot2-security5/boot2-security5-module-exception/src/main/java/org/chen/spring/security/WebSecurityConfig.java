@@ -48,7 +48,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 // 指定所有访问都是需要登录才尅操作
                 .anyRequest().authenticated()
                 // 指定采用formLogin方式认证，登录页面为/login，登录成功页面 / 并且/login页面不需要验证登录
-                .and().formLogin().loginPage("/login").defaultSuccessUrl("/").permitAll()
+                // 指定错误Url /login/error
+                .and().formLogin().loginPage("/login").defaultSuccessUrl("/").failureUrl("/login/error").permitAll()
                 // 指定退出也不需要验证登录
                 .and().logout().permitAll();
         // 关闭csrf 跨域
