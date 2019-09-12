@@ -1,0 +1,26 @@
+package org.chen.spring.mapper;
+
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Select;
+import org.chen.spring.entity.SysUserRole;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+/**
+ * 用户角色DAO
+ *
+ * @author chensj
+ * @date 2019-09-11 15:40
+ */
+@Mapper
+public interface SysUserRoleMapper {
+    /**
+     * 根据用户获取角色ID信息
+     *
+     * @param userId 用户ID
+     * @return list
+     */
+    @Select("SELECT * FROM sys_user_role WHERE user_id = #{userId}")
+    List<SysUserRole> listByUserId(Integer userId);
+}

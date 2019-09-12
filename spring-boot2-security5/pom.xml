@@ -21,11 +21,18 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <boot2-security5-base-entity.version>1.0.0-SNAPSHOT</boot2-security5-base-entity.version>
+        <boot2-security5-base-mapper.version>1.0.0-SNAPSHOT</boot2-security5-base-mapper.version>
+        <boot2-security5-base-service.version>1.0.0-SNAPSHOT</boot2-security5-base-service.version>
     </properties>
 
     <modules>
-        <module>boot2-security5-first-module</module>
-        <module>boot2-security5-remeberme</module>
+        <module>boot2-security5-module-first</module>
+        <module>boot2-security5-module-rememberme</module>
+        <module>boot2-security5-base-service</module>
+        <module>boot2-security5-base-mapper</module>
+        <module>boot2-security5-base-entity</module>
+        <module>boot2-security5-module-exception</module>
     </modules>
 
     <dependencyManagement>
@@ -40,6 +47,21 @@
                 <artifactId>junit</artifactId>
                 <version>4.12</version>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.chen.spring</groupId>
+                <artifactId>boot2-security5-base-entity</artifactId>
+                <version>${boot2-security5-base-entity.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.chen.spring</groupId>
+                <artifactId>boot2-security5-base-mapper</artifactId>
+                <version>${boot2-security5-base-mapper.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.chen.spring</groupId>
+                <artifactId>boot2-security5-base-service</artifactId>
+                <version>${boot2-security5-base-service.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
