@@ -3,10 +3,16 @@ package org.chen.spring.security5.boot.controller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.WebAttributes;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 /**
  * 用户登录Controller
@@ -47,5 +53,25 @@ public class LoginController {
     @PreAuthorize("hasRole('ROLE_USER')")
     public String printUser() {
         return "如果你看见这句话，说明你有ROLE_USER角色";
+    }
+
+    /**
+     * 登录异常
+     * 从session获取异常信息，直接输出到页面上面
+     *
+     * @param request  请求
+     * @param response 响应
+     */
+    @RequestMapping("/login/error")
+    public void loginError(HttpServletRequest request, HttpServletResponse response) {
+        response.setContentType("text/html;charset=utf-8");
+        //  session 中的 SPRING_SECURITY_LAST_EXCEPTION
+        AuthenticationException exception =
+                (AuthenticationException) request.getSession().getAttribute(WebAttributes.AUTHENTICATION_EXCEPTION);
+        try {
+            response.getWriter().write(exception.toString());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

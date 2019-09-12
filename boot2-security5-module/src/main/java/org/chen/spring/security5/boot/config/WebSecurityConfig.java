@@ -80,6 +80,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .formLogin().loginPage("/login")
                 // 设置登录成功也
                 .defaultSuccessUrl("/").permitAll()
+                // 登录失败Url
+                .failureUrl("/login/error")
                 // 自定义登陆用户名和密码参数，默认为username和password
                 .usernameParameter("username")
                 .passwordParameter("password")

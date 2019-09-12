@@ -685,3 +685,240 @@ protected void configure(HttpSecurity http) throws Exception {
 勾选自动登录后，Cookie 和数据库中均存储了 token 信息：
 
 ![](https://img-blog.csdn.net/20180509102031410)
+
+## 3、异常处理
+
+知道你有没有注意到，当我们登陆失败时候，Spring security 帮我们跳转到了`/login?error`Url，奇怪的是不管是控制台还是网页上都没有打印错误信息。
+
+![](https://img-blog.csdn.net/20180509103952703)
+
+这是因为首先`/login?error`是 Spring security 默认的失败 Url，其次如果你不手动处理这个异常，这个异常是不会被处理的。
+
+### 3.1 常见异常
+
+我们先来列举下一些 Spring Security 中常见的异常：
+
+* UsernameNotFoundException（用户不存在）
+
+* DisabledException（用户已被禁用）
+
+* BadCredentialsException（坏的凭据）
+
+* LockedException（账户锁定）
+
+* AccountExpiredException （账户过期）
+
+* CredentialsExpiredException（证书过期）
+
+* …
+
+  以上列出的这些异常都是 AuthenticationException 的子类，然后我们来看看 Spring security 如何处理 AuthenticationException 异常的。
+
+### 3.2 源码分析
+
+我们知道异常处理一般在过滤器中处理，我们在`AbstractAuthenticationProcessingFilter`中找到了对 `AuthenticationException`的处理：
+
+1. 在`doFilter()`中，捕捉了`AuthenticationException`异常，并交给了`unsuccessfulAuthentication() `处理
+
+```java
+public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
+			throws IOException, ServletException {
+
+		HttpServletRequest request = (HttpServletRequest) req;
+		HttpServletResponse response = (HttpServletResponse) res;
+
+		if (!requiresAuthentication(request, response)) {
+			chain.doFilter(request, response);
+
+			return;
+		}
+
+		if (logger.isDebugEnabled()) {
+			logger.debug("Request is to process authentication");
+		}
+
+		Authentication authResult;
+
+		try {
+			authResult = attemptAuthentication(request, response);
+			if (authResult == null) {
+				// return immediately as subclass has indicated that it hasn't completed
+				// authentication
+				return;
+			}
+			sessionStrategy.onAuthentication(authResult, request, response);
+		}
+		catch (InternalAuthenticationServiceException failed) {
+			logger.error(
+					"An internal error occurred while trying to authenticate the user.",
+					failed);
+             // 异常处理
+			unsuccessfulAuthentication(request, response, failed);
+			return;
+		}
+		catch (AuthenticationException failed) {
+			// Authentication failed 
+            // 异常处理
+			unsuccessfulAuthentication(request, response, failed);
+			return;
+		}
+
+		// Authentication success
+		if (continueChainBeforeSuccessfulAuthentication) {
+			chain.doFilter(request, response);
+		}
+
+		successfulAuthentication(request, response, chain, authResult);
+	}
+```
+
+2. 在 `unsuccessfulAuthentication()` 中，转交给了 `SimpleUrlAuthenticationFailureHandler` 类的 `onAuthenticationFailure()` 处理。
+
+```java
+protected void unsuccessfulAuthentication(HttpServletRequest request,
+			HttpServletResponse response, AuthenticationException failed)
+			throws IOException, ServletException {
+		SecurityContextHolder.clearContext();
+
+		if (logger.isDebugEnabled()) {
+			logger.debug("Authentication request failed: " + failed.toString(), failed);
+			logger.debug("Updated SecurityContextHolder to contain null Authentication");
+			logger.debug("Delegating to authentication failure handler " + failureHandler);
+		}
+
+		rememberMeServices.loginFail(request, response);
+
+		failureHandler.onAuthenticationFailure(request, response, failed);
+	}
+```
+
+3. 在onAuthenticationFailure()中，首先判断有没有设置defaultFailureUrl。
+   * 如果没有设置，直接返回 401 错误，即 HttpStatus.UNAUTHORIZED 的值。
+   * 如果设置了，首先执行 saveException() 方法。然后判断 forwardToDestination ，即是否是服务器跳转，默认使用重定向即客户端跳转。
+
+```java
+public void onAuthenticationFailure(HttpServletRequest request,
+			HttpServletResponse response, AuthenticationException exception)
+			throws IOException, ServletException {
+		// 判断defaultFailureUrl是否设置
+        // 没有设置则返回HttpStatus.UNAUTHORIZED的值 401
+		if (defaultFailureUrl == null) {
+			logger.debug("No failure URL set, sending 401 Unauthorized error");
+
+			response.sendError(HttpStatus.UNAUTHORIZED.value(),
+				HttpStatus.UNAUTHORIZED.getReasonPhrase());
+		}
+		else {
+            // 保存异常
+			saveException(request, exception);
+			// 判断是否服务器跳转
+			if (forwardToDestination) {
+				logger.debug("Forwarding to " + defaultFailureUrl);
+
+				request.getRequestDispatcher(defaultFailureUrl)
+						.forward(request, response);
+			}
+			else {
+                // 默认情况下是重定向，即客户端跳转
+				logger.debug("Redirecting to " + defaultFailureUrl);
+				redirectStrategy.sendRedirect(request, response, defaultFailureUrl);
+			}
+		}
+	}
+```
+
+4. 在`saveException()`方法中，首先判断`forwardToDestination`，
+
+   * 使用服务器跳转则写入`Request`
+   * 使用客户端跳转则写入`Session`
+   * 写入名为`SPRING_SECURITY_LAST_EXCEPTION` ，值为`AuthenticationException`
+
+   ```java
+   protected final void saveException(HttpServletRequest request,
+   			AuthenticationException exception) {
+           // 判断服务端跳转
+   		if (forwardToDestination) {
+   			request.setAttribute(WebAttributes.AUTHENTICATION_EXCEPTION, exception);
+   		}
+   		else {
+   			HttpSession session = request.getSession(false);
+   
+   			if (session != null || allowSessionCreation) {
+   				request.getSession().setAttribute(WebAttributes.AUTHENTICATION_EXCEPTION,
+   						exception);
+   			}
+   		}
+   }
+   ```
+
+
+### 3.3 异常处理
+
+   上面源码说了那么多，真正处理起来很简单，我们只需要指定错误的url，然后再该方法中对异常进行处理即可。
+
+（1）指定错误Url，`WebSecurityConfig`中添加`.failureUrl("/login/error")`
+
+```java
+@Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http.authorizeRequests()
+                // 任何请求 都需要认证
+                // 如果存在不需要认证的url,可以使用 .antMatchers().permitAll()来设置
+                .anyRequest().authenticated()
+                .and()
+                // 设置登录页
+                .formLogin().loginPage("/login")
+                // 设置登录成功也
+                .defaultSuccessUrl("/").permitAll()
+                // 登录失败Url
+                .failureUrl("/login/error")
+                // 自定义登陆用户名和密码参数，默认为username和password
+                .usernameParameter("username")
+                .passwordParameter("password")
+                .and()
+                // 退出
+                .logout().permitAll()
+                // 自动登录
+                .and()
+                // 自动登录
+                // 只使用 rememberMe 则是保存在token中
+                // 使用tokenRepository后，会产生一个token，与用户名信息进行对应存放在数据库persistent_logins中
+                .rememberMe()
+                // 指定token Repository
+                .tokenRepository(persistentTokenRepository())
+                // 有效时间：单位s
+                .tokenValiditySeconds(60)
+                .userDetailsService(userDetailService);
+        ;
+        // 关闭CSRF跨域
+        http.csrf().disable();
+    }
+```
+
+(2)在Controller中处理异常
+
+```java
+   /**
+     * 登录异常
+     * 从session获取异常信息，直接输出到页面上面
+     *
+     * @param request  请求
+     * @param response 响应
+     */
+    @RequestMapping("/login/error")
+    public void loginError(HttpServletRequest request, HttpServletResponse response) {
+        response.setContentType("text/html;charset=utf-8");
+        //  session 中的 SPRING_SECURITY_LAST_EXCEPTION
+        AuthenticationException exception =
+                (AuthenticationException) request.getSession().getAttribute(WebAttributes.AUTHENTICATION_EXCEPTION);
+        try {
+            response.getWriter().write(exception.toString());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+```
+
+运行程序，当我们输入错误密码时：
+
+![](https://img-blog.csdn.net/20180403145530517)
