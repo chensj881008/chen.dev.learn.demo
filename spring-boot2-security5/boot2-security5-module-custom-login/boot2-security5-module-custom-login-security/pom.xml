@@ -18,6 +18,16 @@
 
     <name>Spring Boot Security Custom Login By Security Module</name>
 
+    <description>
+        使用Spring Security 方式来验证自定义登录
+        在默认情况下，Spring Security只会验证用户名和密码，如果有自定义的参数需要验证，则需要
+        自己需要书写逻辑验证
+        主要是需要将自定义信息放置到WebAuthenticationDetails，然后通过AuthenticationDetailsSource
+        用于替换Spring Security中的默认的AuthenticationDetailsSource，主要是通过在SecurityConfig中
+        指定自定义参数来源，然后还需要提供自定义参数验证逻辑AuthenticationProvider，并将SecurityConfig中
+        验证逻辑修改为修改使用自定义逻辑验证方法来实现验证
+    </description>
+
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>

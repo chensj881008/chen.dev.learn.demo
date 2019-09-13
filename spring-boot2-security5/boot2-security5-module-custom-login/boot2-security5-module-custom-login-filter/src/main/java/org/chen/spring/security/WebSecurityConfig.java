@@ -2,6 +2,7 @@ package org.chen.spring.security;
 
 import org.chen.spring.security.filter.VerifyCodeFilter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
@@ -11,6 +12,10 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl;
+import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
+
+import javax.sql.DataSource;
 
 /**
  * @author chensj
@@ -23,6 +28,19 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Autowired
     private CustomUserDetailsService userDetailsService;
+
+    @Autowired
+    private DataSource dataSource;
+
+    @Bean
+    public PersistentTokenRepository persistentTokenRepository() {
+        JdbcTokenRepositoryImpl jdbcTokenRepository = new JdbcTokenRepositoryImpl();
+        jdbcTokenRepository.setDataSource(dataSource);
+        // 如果token表不存在，使用下面语句可以初始化该表；
+        // 若存在，请注释掉这条语句，否则会报错。
+        //jdbcTokenRepository.setCreateTableOnStartup(true);
+        return jdbcTokenRepository;
+    }
 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
@@ -57,7 +75,14 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 // 自定义过滤器设置
                 .and().addFilterBefore(new VerifyCodeFilter(), UsernamePasswordAuthenticationFilter.class)
                 // 指定退出也不需要验证登录
-                .logout().permitAll();
+                .logout().permitAll()
+                // 使用记住我功能
+                .and().rememberMe()
+                // 使用数据库方式来实现remember me功能
+                // 将用户名与token的关系存放在数据库中，前端只会传出一个与用户信息无关的token
+                .tokenRepository(persistentTokenRepository())
+                // 有效时间：单位s
+                .tokenValiditySeconds(60).userDetailsService(userDetailsService);
         // 关闭csrf 跨域
         http.csrf().disable();
     }

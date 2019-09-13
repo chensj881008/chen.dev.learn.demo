@@ -1,6 +1,7 @@
 package org.chen.spring.security;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
@@ -8,7 +9,10 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl;
+import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
+
+import javax.sql.DataSource;
 
 /**
  * @author chensj
@@ -21,25 +25,42 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Autowired
     private CustomUserDetailsService userDetailsService;
+    @Autowired
+    private CustomAuthenticationDetailsSource authenticationDetailsSource;
+    @Autowired
+    private DataSource dataSource;
+    @Autowired
+    private CustomAuthenticationProvider authenticationProvider;
+
+    @Bean
+    public PersistentTokenRepository persistentTokenRepository() {
+        JdbcTokenRepositoryImpl jdbcTokenRepository = new JdbcTokenRepositoryImpl();
+        jdbcTokenRepository.setDataSource(dataSource);
+        // 如果token表不存在，使用下面语句可以初始化该表；
+        // 若存在，请注释掉这条语句，否则会报错。
+        //jdbcTokenRepository.setCreateTableOnStartup(true);
+        return jdbcTokenRepository;
+    }
 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-
-        auth
-                // 指定用户登录使用的获取用户信息的服务
-                .userDetailsService(userDetailsService)
-                // 设置密码加密方式
-                .passwordEncoder(new PasswordEncoder() {
-                    @Override
-                    public String encode(CharSequence rawPassword) {
-                        return rawPassword.toString();
-                    }
-
-                    @Override
-                    public boolean matches(CharSequence rawPassword, String encodedPassword) {
-                        return encodedPassword.equals(rawPassword.toString());
-                    }
-                });
+        //auth
+        //        // 指定用户登录使用的获取用户信息的服务
+        //        .userDetailsService(userDetailsService)
+        //        // 设置密码加密方式
+        //        .passwordEncoder(new PasswordEncoder() {
+        //            @Override
+        //            public String encode(CharSequence rawPassword) {
+        //                return rawPassword.toString();
+        //            }
+        //
+        //            @Override
+        //            public boolean matches(CharSequence rawPassword, String encodedPassword) {
+        //                return encodedPassword.equals(rawPassword.toString());
+        //            }
+        //        });
+        // 使用自定义的验证器
+        auth.authenticationProvider(authenticationProvider);
     }
 
     @Override
@@ -47,13 +68,24 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         http.authorizeRequests()
                 // 指定不需要验证登录的url，如果有其他不需要的也可以添加在这里
                 .antMatchers("/getVerifyCode").permitAll()
+
                 // 指定所有访问都是需要登录才尅操作
                 .anyRequest().authenticated()
                 // 指定采用formLogin方式认证，登录页面为/login，登录成功页面 / 并且/login页面不需要验证登录
                 // 指定错误Url /login/error
-                .and().formLogin().loginPage("/login").defaultSuccessUrl("/").failureUrl("/login/error").permitAll()
+                .and().formLogin().loginPage("/login").defaultSuccessUrl("/").failureUrl("/login/error")
+                // 指定自定义参数组装的来源
+                .authenticationDetailsSource(authenticationDetailsSource)
+                .permitAll()
                 // 指定退出也不需要验证登录
-                .and().logout().permitAll();
+                .and().logout().permitAll()
+                // 使用记住我功能
+                .and().rememberMe()
+                // 使用数据库方式来实现remember me功能
+                // 将用户名与token的关系存放在数据库中，前端只会传出一个与用户信息无关的token
+                .tokenRepository(persistentTokenRepository())
+                // 有效时间：单位s
+                .tokenValiditySeconds(60).userDetailsService(userDetailsService);
         // 关闭csrf 跨域
         http.csrf().disable();
     }
