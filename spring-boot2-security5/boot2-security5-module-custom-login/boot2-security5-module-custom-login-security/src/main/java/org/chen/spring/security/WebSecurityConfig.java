@@ -1,6 +1,5 @@
 package org.chen.spring.security;
 
-import org.chen.spring.security.filter.VerifyCodeFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -10,7 +9,6 @@ import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 /**
  * @author chensj
@@ -54,10 +52,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 // 指定采用formLogin方式认证，登录页面为/login，登录成功页面 / 并且/login页面不需要验证登录
                 // 指定错误Url /login/error
                 .and().formLogin().loginPage("/login").defaultSuccessUrl("/").failureUrl("/login/error").permitAll()
-                // 自定义过滤器设置
-                .and().addFilterBefore(new VerifyCodeFilter(), UsernamePasswordAuthenticationFilter.class)
                 // 指定退出也不需要验证登录
-                .logout().permitAll();
+                .and().logout().permitAll();
         // 关闭csrf 跨域
         http.csrf().disable();
     }
