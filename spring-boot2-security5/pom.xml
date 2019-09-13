@@ -34,6 +34,7 @@
         <module>boot2-security5-base-entity</module>
         <module>boot2-security5-module-exception</module>
         <module>boot2-security5-module-custom-login</module>
+        <module>boot2-security5-module-authority</module>
     </modules>
 
     <dependencyManagement>
