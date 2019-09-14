@@ -35,6 +35,7 @@
         <module>boot2-security5-module-exception</module>
         <module>boot2-security5-module-custom-login</module>
         <module>boot2-security5-module-authority</module>
+        <module>boot2-security5-module-login-handler</module>
     </modules>
 
     <dependencyManagement>

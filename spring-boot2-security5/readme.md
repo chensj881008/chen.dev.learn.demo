@@ -1793,3 +1793,133 @@ public PersistentTokenRepository persistentTokenRepository() {
 当我使用角色为 `ROLE_USER` 的用户仍然能访问，因为该用户访问 `/admin` 路径具有 `r` 权限：
 
 ![运行结果](https://img-blog.csdn.net/2018051519070954)
+
+## 6、登录管理
+
+### 6.1 自定义认证成功与失败处理
+
+项目无需增加配置，只需要采用入门的那个项目即可
+
+在上面的项目中，我们关于认证成功和失败后的处理是如下配置的
+
+```java
+@Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http.authorizeRequests()
+                // 指定所有访问都是需要登录才尅操作
+                .anyRequest().authenticated()
+                // 指定采用formLogin方式认证，，登录成功页面 / 并且/login页面不需要验证登录
+                .and().formLogin()
+                // 设置登录页面为/login
+                .loginPage("/login")
+                // 设置认证成功后Url
+                .defaultSuccessUrl("/")
+                // 认证失败后的页面
+                .failureForwardUrl("/login/error")
+                .permitAll()
+                // 指定退出也不需要验证登录
+                .and().logout().permitAll();
+        // 关闭csrf 跨域
+        http.csrf().disable();
+    }
+```
+
+>  `failureUrl()` 指定认证失败后Url，
+>
+> `defaultSuccessUrl()` 指定认证成功后Url。
+>
+> 我们可以通过设置 `successHandler()` 和 `failureHandler()` 来实现自定义认证成功、失败处理。
+>
+> 同样，当我们指定上面的两个handler的时候，之前设置的 `failureUrl()`和`defaultSuccessUrl()`需要去除，否则将无法使用我们自定义的handler。**即上述两种配置只能存在一个，不能同时存在**
+
+#### 6.1.1 CustomAuthenticationSuccessHandler
+
+```java
+@Component
+@Slf4j
+public class CustomAuthenticationSuccessHandler implements AuthenticationSuccessHandler {
+    /**
+     * 登录成功处理
+     *
+     * @param authentication 认证后该用户的认证信息
+     */
+    @Override
+    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
+                                        Authentication authentication) throws IOException, ServletException {
+        log.info("登录成功{}", authentication);
+        // 重定向到了首页
+        response.sendRedirect("/");
+    }
+}
+```
+
+#### 6.1.2 CustomAuthenticationFailureHandler
+
+```java
+@Component
+@Slf4j
+public class CustomAuthenticationFailureHandler implements AuthenticationFailureHandler {
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    /**
+     * 登录失败后的处理
+     *
+     * @param exception 认证失败所产生的异常
+     */
+    @Override
+    public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response,
+                                        AuthenticationException exception) throws IOException, ServletException {
+
+        log.info("登录失败,失败原因{}", exception.getMessage());
+        response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+        response.setContentType("application/json;charset=UTF-8");
+        response.getWriter().write(objectMapper.writeValueAsString(exception.getMessage()));
+    }
+}
+```
+
+#### 6.1.3 WebSecurityConfig
+
+```java
+@Autowired
+private CustomAuthenticationSuccessHandler authenticationSuccessHandler;
+@Autowired
+private CustomAuthenticationFailureHandler authenticationFailureHandler;
+ @Override
+protected void configure(HttpSecurity http) throws Exception {
+    http.authorizeRequests()
+        // 指定所有访问都是需要登录才尅操作
+        .anyRequest().authenticated()
+        // 指定采用formLogin方式认证，，登录成功页面 / 并且/login页面不需要验证登录
+        .and().formLogin()
+        // 设置登录页面为/login
+        .loginPage("/login")
+        //// 设置认证成功后Url
+        //.defaultSuccessUrl("/")
+        //// 认证失败后的页面
+        //.failureForwardUrl("/login/error")
+        .successHandler(authenticationSuccessHandler)
+        .failureHandler(authenticationFailureHandler)
+        .permitAll()
+        // 指定退出也不需要验证登录
+        .and().logout().permitAll();
+    // 关闭csrf 跨域
+    http.csrf().disable();
+}
+```
+
+1. 首先将 customAuthenticationSuccessHandler 和 customAuthenticationFailureHandler注入进来
+
+2. 配置 successHandler() 和 failureHandler()
+
+3. 注释 failureUrl() 和 defaultSuccessUrl()1.4 运行程序
+
+   运行程序，当我们成功登陆后，发现日志信息被打印出来，页面被重定向到了首页：
+
+   ![img](https://img-blog.csdnimg.cn/20190110174809434.png)
+
+   当我们认证失败后，发现日志中“登陆失败”被打印出来，页面展示了认证失败的异常消息：
+
+   ![img](https://img-blog.csdnimg.cn/20190110174827988.png)
+
