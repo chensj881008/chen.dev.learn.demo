@@ -65,7 +65,10 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .failureHandler(authenticationFailureHandler)
                 .permitAll()
                 // 指定退出也不需要验证登录
-                .and().logout().permitAll();
+                .and().logout().permitAll()
+                .and()
+                // 使用session管理 并指定session过期后跳转页面
+                .sessionManagement().invalidSessionUrl("/login/invalid");
         // 关闭csrf 跨域
         http.csrf().disable();
     }

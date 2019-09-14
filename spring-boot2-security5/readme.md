@@ -1923,3 +1923,61 @@ protected void configure(HttpSecurity http) throws Exception {
 
    ![img](https://img-blog.csdnimg.cn/20190110174827988.png)
 
+### 6.2 Session超时
+
+当用户登录后，我们可以设置 session 的超时时间，当达到超时时间后，自动将用户退出登录。
+
+Session 超时的配置是 SpringBoot 原生支持的，我们只需要在 application.properties 配置文件中配置：
+
+```properties
+# session 过期时间，单位：秒
+server.servlet.session.timeout=60
+```
+
+> Tip：
+> 从用户最后一次操作开始计算过期时间。
+> 过期时间最小值为 60 秒，如果你设置的值小于 60 秒，也会被更改为 60 秒。
+
+我们可以在 Spring Security 中配置处理逻辑，在 session 过期退出时调用。修改 WebSecurityConfig 的 `configure()` 方法，添加：
+
+```java
+.sessionManagement()
+    // 以下二选一
+    //.invalidSessionStrategy()
+    //.invalidSessionUrl();
+```
+
+Spring Security 提供了两种处理配置，一个是 invalidSessionStrategy()，另外一个是 invalidSessionUrl()。
+
+这两个的区别就是一个是前者是在一个类中进行处理，后者是直接跳转到一个 Url。简单起见，我就直接用 invalidSessionUrl()了，跳转到 /login/invalid，我们需要把该 Url 设置为免授权访问， 配置如下：
+
+```java
+@Override
+protected void configure(HttpSecurity http) throws Exception {
+    http.authorizeRequests()
+            // 如果有允许匿名的url，填在下面
+            .antMatchers("/login/invalid").permitAll()
+            .anyRequest().authenticated().and()
+            ...
+            .sessionManagement()
+                .invalidSessionUrl("/login/invalid");
+    // 关闭CSRF跨域
+    http.csrf().disable();
+}
+```
+
+在 controller 中写一个接口进行处理：
+
+```java
+@RequestMapping("/login/invalid")
+@ResponseStatus(HttpStatus.UNAUTHORIZED)
+@ResponseBody
+public String invalid() {
+    return "Session 已过期，请重新登录";
+}
+```
+
+
+运行程序，登陆成功后等待一分钟（或者重启服务器），刷新页面：
+
+![](https://img-blog.csdnimg.cn/20190110171026663.png)
