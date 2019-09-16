@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  * @author chensj
@@ -26,7 +28,7 @@ public class LoginController {
     @RequestMapping("/")
     public String showHome() {
         String name = SecurityContextHolder.getContext().getAuthentication().getName();
-        log.info("当前登陆用户：" + name);
+        log.info("当前登陆用户：{} , 当前时间是: {}", name, new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
         return "home.html";
     }
 

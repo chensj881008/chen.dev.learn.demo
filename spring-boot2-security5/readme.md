@@ -1954,17 +1954,31 @@ Spring Security 提供了两种处理配置，一个是 invalidSessionStrategy()
 ```java
 @Override
 protected void configure(HttpSecurity http) throws Exception {
-    http.authorizeRequests()
-            // 如果有允许匿名的url，填在下面
-            .antMatchers("/login/invalid").permitAll()
-            .anyRequest().authenticated().and()
-            ...
-            .sessionManagement()
-                .invalidSessionUrl("/login/invalid");
-    // 关闭CSRF跨域
-    http.csrf().disable();
+   http.authorizeRequests()
+                // 如果有允许匿名的url，填在下面
+                .antMatchers("/login/invalid").permitAll()
+                // 指定所有访问都是需要登录才尅操作
+                .anyRequest().authenticated()
+                // 指定采用formLogin方式认证，，登录成功页面 / 并且/login页面不需要验证登录
+                .and().formLogin()
+                // 设置登录页面为/login
+                .loginPage("/login")
+                // 设置认证成功后Url， 认证失败后的页面
+                //.defaultSuccessUrl("/").failureForwardUrl("/login/error")
+                .successHandler(authenticationSuccessHandler)
+                .failureHandler(authenticationFailureHandler)
+                .permitAll()
+                // 指定退出也不需要验证登录
+                .and().logout().permitAll()
+                .and()
+                // 使用session管理 并指定session过期后跳转页面
+                .sessionManagement().invalidSessionUrl("/login/invalid");
+        // 关闭csrf 跨域
+        http.csrf().disable();
 }
 ```
+
+> 如果使用session失效时间的话，那么就不能使用自定义的登录成功与失败的handler，即6.1中的代码，需要注释上述代码才能够实现
 
 在 controller 中写一个接口进行处理：
 
@@ -1981,3 +1995,90 @@ public String invalid() {
 运行程序，登陆成功后等待一分钟（或者重启服务器），刷新页面：
 
 ![](https://img-blog.csdnimg.cn/20190110171026663.png)
+
+### 6.3 限制最大登录数
+
+限制最大登陆数，原理就是限制单个用户能够存在的最大 session 数。
+
+实现方式代码如下：
+
+```java
+  @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http.authorizeRequests()
+                // 如果有允许匿名的url，填在下面
+                .antMatchers("/login/invalid").permitAll()
+                // 指定所有访问都是需要登录才尅操作
+                .anyRequest().authenticated()
+                // 指定采用formLogin方式认证，，登录成功页面 / 并且/login页面不需要验证登录
+                .and().formLogin()
+                // 设置登录页面为/login
+                .loginPage("/login")
+                // 设置认证成功后Url， 认证失败后的页面
+                //.defaultSuccessUrl("/").failureForwardUrl("/login/error")
+                .successHandler(authenticationSuccessHandler)
+                .failureHandler(authenticationFailureHandler)
+                .permitAll()
+                // 指定退出也不需要验证登录
+                .and().logout().permitAll()
+                .and()
+                // 使用session管理 并指定session过期后跳转页面
+                .sessionManagement().invalidSessionUrl("/login/invalid")
+                // 限制同时登录的人数，指定最大登录人数
+                .maximumSessions(1)
+                // 当达到最大值时，是否保留已经登录的用户
+                .maxSessionsPreventsLogin(false)
+                // 当达到最大值时，旧用户被踢出后的操作
+                .expiredSessionStrategy(new CustomExpiredSessionStrategy());
+        // 关闭csrf 跨域
+        http.csrf().disable();
+    }
+```
+
+增加了下面三行代码，其中：
+
+* `maximumSessions(int)`：指定最大登录数
+* `maxSessionsPreventsLogin(boolean)`：是否保留已经登录的用户；为true，新用户无法登录；为 false，旧用户被踢出
+* `expiredSessionStrategy(SessionInformationExpiredStrategy)`：旧用户被踢出后处理方法
+  maxSessionsPreventsLogin()可能不太好理解，这里我们先设为 false，效果和 QQ 登录是一样的，登陆后之前登录的账户被踢出。
+
+`CustomExpiredSessionStrategy` 处理逻辑
+
+```java
+public class CustomExpiredSessionStrategy implements SessionInformationExpiredStrategy {
+    /**
+     * Jackson处理bean的utils类
+     */
+    private ObjectMapper objectMapper = new ObjectMapper();
+
+    @Override
+    public void onExpiredSessionDetected(SessionInformationExpiredEvent event) throws IOException, ServletException {
+        Map<String, Object> map = new HashMap<>(16);
+        map.put("code", 0);
+        map.put("msg", "已经另一台机器登录，您被迫下线。" + event.getSessionInformation().getLastRequest());
+        // Map -> Json
+        String json = objectMapper.writeValueAsString(map);
+
+        event.getResponse().setContentType("application/json;charset=UTF-8");
+        event.getResponse().getWriter().write(json);
+
+        // 如果是跳转html页面，url代表跳转的地址
+        // redirectStrategy.sendRedirect(event.getRequest(), event.getResponse(), "url");
+    }
+}
+```
+
+在`onExpiredSessionDetected() `方法中，处理相关逻辑，我这里只是简单的返回一句话。
+
+执行程序，打开两个浏览器，登录同一个账户。因为我设置了 maximumSessions(1)，也就是单个用户只能存在一个 session，因此当你刷新先登录的那个浏览器时，被提示踢出了。
+
+测试1：`maxSessionsPreventsLogin` 参数为false
+
+执行程序，打开两个浏览器，登录同一个账户。因为我设置了 maximumSessions(1)，也就是单个用户只能存在一个 session，因此当你刷新先登录的那个浏览器时，被提示踢出了。
+
+![](https://img-blog.csdnimg.cn/2019011017515758.png)
+
+测试2：`maxSessionsPreventsLogin` 参数为true
+
+![](https://img-blog.csdnimg.cn/20190110175325653.png)
+

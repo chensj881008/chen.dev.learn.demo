@@ -2,7 +2,7 @@
 DROP DATABASE IF EXISTS security5;
 -- 创建数据库
 CREATE DATABASE security5 DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-use security5;
+USE security5;
 
 CREATE TABLE `sys_user` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
