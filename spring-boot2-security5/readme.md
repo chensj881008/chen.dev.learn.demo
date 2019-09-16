@@ -2302,3 +2302,8 @@ public class LoginShareApplication {
 
 ![img](https://img-blog.csdnimg.cn/20190118111234720.png)
 
+## 7 认证流程
+
+### 7.1 认证流程
+
+![认证流程](https://img-blog.csdnimg.cn/20181202095539982.png)
