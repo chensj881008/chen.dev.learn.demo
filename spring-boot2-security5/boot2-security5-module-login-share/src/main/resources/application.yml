@@ -1,0 +1,51 @@
+server:
+  port: 9080
+  # session 过期时间，单位：秒
+  servlet:
+    session:
+      timeout: 60
+spring:
+  application:
+    name: spring-boot-security5
+  datasource:
+    url: jdbc:mysql://172.17.1.242:3306/security5?useUnicode=true&characterEncoding=utf-8&useSSL=true
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: 123456
+    name: spring-security5
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 25
+      auto-commit: true
+      idle-timeout: 30000
+      pool-name: spring-security5-hikari
+      max-lifetime: 1800000
+      connection-timeout: 30000
+  devtools:
+    livereload:
+      enabled: true
+    restart:
+      enabled: true
+      exclude: WEB-INF/**
+  main:
+    allow-bean-definition-overriding: true
+  redis:
+    host: 172.17.1.242
+    port: 6000
+  session:
+    store-type: redis
+#  开启Mybatis下划线命名转驼峰命名
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+  endpoint:
+    shutdown:
+      enabled: false
+    health:
+      show-details: always

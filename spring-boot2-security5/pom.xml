@@ -36,6 +36,7 @@
         <module>boot2-security5-module-custom-login</module>
         <module>boot2-security5-module-authority</module>
         <module>boot2-security5-module-login-handler</module>
+        <module>boot2-security5-module-login-share</module>
     </modules>
 
     <dependencyManagement>

@@ -2169,5 +2169,136 @@ private SessionRegistry sessionRegistry;
 
 运行程序，分别使用 admin 和 chensj账户登录，admin 访问 `/kick?username=chensj`来踢出用户 chensj，chensj刷新页面，发现被踢出。
 
+### 6.5 用户退出
 
+退出登录的内容，在之前，我们直接在 WebSecurityConfig 的 configure() 方法中，配置了：
+
+```java
+http.logout();
+```
+
+
+这就是 Spring Security 的默认退出配置，Spring Security 在退出时候做了这样几件事：
+
+1. 使当前的 session 失效
+
+2. 清除与当前用户有关的 remember-me 记录
+
+3. 清空当前的 SecurityContext
+
+4. 重定向到登录页
+
+Spring Security 默认的退出Url是/logout，我们可以修改默认的退出 Url，例如修改为 /signout：
+
+```java
+http.logout()
+	.logoutUrl("/signout");
+```
+
+我们也可以配置当退出时清除浏览器的 Cookie，例如清除 名为 JSESSIONID 的 cookie：
+```java
+http.logout()
+	.logoutUrl("/signout")
+	.deleteCookies("JSESSIONID");
+```
+
+我们也可以配置退出后处理的逻辑，方便做一些别的操作：
+```java
+http.logout()
+	.logoutUrl("/signout")
+	.deleteCookies("JSESSIONID")
+	.logoutSuccessHandler(logoutSuccessHandler);
+```
+
+创建类 DefaultLogoutSuccessHandler：
+```java
+@Component
+public class CustomLogoutSuccessHandler implements LogoutSuccessHandler {
+    Logger log = LoggerFactory.getLogger(getClass());
+    
+    @Override
+    public void onLogoutSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+        String username = ((User) authentication.getPrincipal()).getUsername();
+        log.info("退出成功，用户名：{}", username);
+    	
+    	// 重定向到登录页
+        response.sendRedirect("/login");
+    }
+}
+```
+
+最后把它注入到 WebSecurityConfig 即可：
+```java
+@Autowired
+private CustomLogoutSuccessHandler logoutSuccessHandler;
+```
+
+### 6.6 Session 共享
+
+关于 Session 共享的知识点，一般情况下，一个程序为了保证稳定至少要部署两个，构成集群。那么就牵扯到了 Session 共享的问题，不然用户在 8080 登录成功后，后续访问了 8060 服务器，结果又提示没有登录。
+
+这里就简单实现下 Session 共享，采用 Redis 来存储。
+
+#### 6.6.1 配置Redis
+
+为了方便起见，我直接使用 Docker 快速部署，如果你需要传统方式安装，可以参考文章[《Redis初探（1）——Redis的安装》](https://blog.csdn.net/yuanlaijike/article/details/79383242)。
+
+```bash
+docker pull redis
+docker run --name myredis -p 6379:6379 -d redis
+docker exec -it myredis redis-cli
+```
+
+这样就启动了 redis，并且进入到 redis 命令行中。
+
+#### 6.6.2 配置Session
+
+首先需要导入依赖，因为我们采用 Redis 方式实现，因此导入：
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-redis</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.springframework.session</groupId>
+    <artifactId>spring-session-data-redis</artifactId>
+</dependency>
+```
+
+在application.yml中配置redis和session的信息
+
+```yaml
+spring:
+  redis:
+    host: 172.17.1.242
+    port: 6000
+  session:
+    store-type: redis
+```
+
+在主类上添加注解开启配置
+
+```java
+@EnableRedisHttpSession
+@SpringBootApplication
+public class LoginShareApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(LoginShareApplication.class, args);
+    }
+}
+```
+
+先访问 `localhost:8080`，登录成功后，再访问 `localhost:8060`，发现无需登录。
+
+![Session 共享运行结果](https://img-blog.csdnimg.cn/20190118110952599.png)
+
+然后我们进入 Redis 查看下 key：
+
+![img](https://img-blog.csdnimg.cn/20190118111044647.png)
+
+最后再测试下之前配置的 session 设置是否还有效，使用其他浏览器登陆，登陆成功后发现原浏览器用户的确被踢出。
+
+![img](https://img-blog.csdnimg.cn/20190118111234720.png)
 
