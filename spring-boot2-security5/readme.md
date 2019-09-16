@@ -2082,3 +2082,92 @@ public class CustomExpiredSessionStrategy implements SessionInformationExpiredSt
 
 ![](https://img-blog.csdnimg.cn/20190110175325653.png)
 
+### 6.4 踢出用户
+
+首先在容器中注入一个名为 `SessionRegistry` 的 Bean，这里我就简单的写在 WebSecurityConfig 中：
+
+```java
+@Bean
+public SessionRegistry sessionRegistry() {
+    return new SessionRegistryImpl();
+}
+```
+
+修改WebSecurityConfig配置
+
+```java
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http.authorizeRequests()
+                // 如果有允许匿名的url，填在下面
+                .antMatchers("/login/invalid").permitAll()
+                // 指定所有访问都是需要登录才尅操作
+                .anyRequest().authenticated()
+                // 指定采用formLogin方式认证，，登录成功页面 / 并且/login页面不需要验证登录
+                .and().formLogin()
+                // 设置登录页面为/login
+                .loginPage("/login")
+                // 设置认证成功后Url， 认证失败后的页面
+                //.defaultSuccessUrl("/").failureForwardUrl("/login/error")
+                .successHandler(authenticationSuccessHandler)
+                .failureHandler(authenticationFailureHandler)
+                .permitAll()
+                // 指定退出也不需要验证登录
+                .and().logout().permitAll()
+                .and()
+                // 使用session管理 并指定session过期后跳转页面
+                .sessionManagement().invalidSessionUrl("/login/invalid")
+                // 限制同时登录的人数，指定最大登录人数
+                .maximumSessions(1)
+                // 当达到最大值时，是否保留已经登录的用户
+                .maxSessionsPreventsLogin(true)
+                // 当达到最大值时，旧用户被踢出后的操作
+                .expiredSessionStrategy(new CustomExpiredSessionStrategy())
+                //
+                .sessionRegistry(sessionRegistry());
+        // 关闭csrf 跨域
+        http.csrf().disable();
+    }
+```
+
+编写一个接口用于测试踢出用户：
+
+```java
+@Autowired
+private SessionRegistry sessionRegistry;
+@GetMapping("/kick")
+    @ResponseBody
+    public String removeUserSessionByUsername(@RequestParam String username) {
+        int count = 0;
+
+        // 获取session中所有的用户信息
+        List<Object> users = sessionRegistry.getAllPrincipals();
+        for (Object principal : users) {
+            if (principal instanceof User) {
+                String principalName = ((User)principal).getUsername();
+                if (principalName.equals(username)) {
+                    // 参数二：是否包含过期的Session
+                    List<SessionInformation> sessionsInfo = sessionRegistry.getAllSessions(principal, false);
+                    if (null != sessionsInfo && sessionsInfo.size() > 0) {
+                        for (SessionInformation sessionInformation : sessionsInfo) {
+                            sessionInformation.expireNow();
+                            count++;
+                        }
+                    }
+                }
+            }
+        }
+        return "操作成功，清理session共" + count + "个";
+    }
+}
+```
+
+1. `sessionRegistry.getAllPrincipals()`; 获取所有 principal 信息
+2. 通过 `principal.getUsername` 是否等于输入值，获取到指定用户的 principal
+3. `sessionRegistry.getAllSessions(principal, false)`获取该 principal 上的所有 session
+4. 通过` sessionInformation.expireNow() `使得 session 过期
+
+运行程序，分别使用 admin 和 chensj账户登录，admin 访问 `/kick?username=chensj`来踢出用户 chensj，chensj刷新页面，发现被踢出。
+
+
+

@@ -4,6 +4,7 @@ import org.chen.spring.security.handler.CustomAuthenticationFailureHandler;
 import org.chen.spring.security.handler.CustomAuthenticationSuccessHandler;
 import org.chen.spring.security.strategy.CustomExpiredSessionStrategy;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
@@ -11,6 +12,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**
@@ -28,6 +31,11 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     private CustomAuthenticationSuccessHandler authenticationSuccessHandler;
     @Autowired
     private CustomAuthenticationFailureHandler authenticationFailureHandler;
+
+    @Bean
+    public SessionRegistry sessionRegistry() {
+        return new SessionRegistryImpl();
+    }
 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
@@ -75,7 +83,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 // 当达到最大值时，是否保留已经登录的用户
                 .maxSessionsPreventsLogin(true)
                 // 当达到最大值时，旧用户被踢出后的操作
-                .expiredSessionStrategy(new CustomExpiredSessionStrategy());
+                .expiredSessionStrategy(new CustomExpiredSessionStrategy())
+                //
+                .sessionRegistry(sessionRegistry());
         // 关闭csrf 跨域
         http.csrf().disable();
     }
