@@ -1,0 +1,14 @@
+task helloWorld{
+    doLast {
+        println "Hello Gradle World"
+    }
+}
+
+task helloWorld2 {
+    println "Hello Gradle World 2"
+    chant()
+}
+
+def chant(){
+    ant.echo(message: 'Repeat after me')
+}
