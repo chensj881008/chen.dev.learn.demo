@@ -1,8 +1,8 @@
 //class HelloGroovy {
 //    // java 方式在Groovy中书写
-////    public static void main(String[] args) {
-////        System.out.println("Hello Groovy!");
-////    }
+//    public static void main(String[] args) {
+//        System.out.println("Hello Groovy!");
+//    }
 //    // groovy写法
 //    static void main(args){
 //        println "Hello Groovy!"
