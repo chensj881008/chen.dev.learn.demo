@@ -26,18 +26,24 @@ public class JenkinsService {
      */
     private static final Logger logger = LoggerFactory.getLogger(JenkinsService.class);
 
-    private final static String JENKINS_URL = "http://172.17.1.242:8080";
-    private final static String JENKINS_USERNAME = "admin";
-    private final static String JENKINS_PASSWORD = "admin";
+    private final static String JENKINS_URL = "http://172.16.9.242:8080";
+    private final static String JENKINS_USERNAME = "chensj";
+    private final static String JENKINS_PASSWORD = "123";
 
     private synchronized JenkinsServer getServerInstance() throws URISyntaxException {
         return new JenkinsServer(new URI(JENKINS_URL), JENKINS_USERNAME, JENKINS_PASSWORD);
     }
 
+    /**
+     * 获取jenkins job信息
+     */
     public Map<String, Job> getJobs() throws URISyntaxException, IOException, InterruptedException {
         return getServerInstance().getJobs();
     }
 
+    /**
+     * 创建job
+     */
     public void createJob() throws URISyntaxException, IOException {
         getServerInstance().createJob(
                 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
@@ -45,11 +51,19 @@ public class JenkinsService {
                         "</maven2-moduleset>");
     }
 
+    /**
+     * 任务删除
+     */
     public void deleteJob() throws URISyntaxException, IOException {
         getServerInstance().deleteJob(
                 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
     }
 
+    /**
+     * 获取指定job详情信息
+     *
+     * @param jobName 名称
+     */
     public String getDetailList(String jobName) throws URISyntaxException, IOException, InterruptedException {
         Map<String, Job> jobs = getServerInstance().getJobs();
         Job job = jobs.get(jobName);
@@ -62,12 +76,33 @@ public class JenkinsService {
         return ReflectionToStringBuilder.toString(details, ToStringStyle.MULTI_LINE_STYLE);
     }
 
+    /**
+     * 获取指定job构建xml
+     *
+     * @param jobName 名称
+     */
+    public String getJobXml(String jobName) throws URISyntaxException, IOException, InterruptedException {
+        String jobXml = getServerInstance().getJobXml(jobName);
+        return jobXml;
+    }
+
+    /**
+     * 执行指定job
+     *
+     * @param jobName 名称
+     */
     public QueueReference build(String jobName) throws URISyntaxException, IOException, InterruptedException {
         Map<String, Job> jobs = getServerInstance().getJobs();
         Job job = jobs.get(jobName);
         return job.build();
     }
 
+    /**
+     * 查询构建job下指定构建NUM下的构建信息的
+     *
+     * @param jobName  名称
+     * @param buildNum 构件号
+     */
     public String buildItemInfo(String jobName, int buildNum) throws URISyntaxException, IOException,
             InterruptedException {
         Map<String, Job> jobs = getServerInstance().getJobs();
@@ -76,6 +111,11 @@ public class JenkinsService {
         return ReflectionToStringBuilder.toString(buildByNumber, ToStringStyle.MULTI_LINE_STYLE);
     }
 
+    /**
+     * 获取查询job下是否处于构建状态
+     *
+     * @param jobName 名称
+     */
     public BuildDTO checkIsBuild(String jobName) throws URISyntaxException, IOException {
         Map<String, Job> jobs = getServerInstance().getJobs();
         Job job = jobs.get(jobName);

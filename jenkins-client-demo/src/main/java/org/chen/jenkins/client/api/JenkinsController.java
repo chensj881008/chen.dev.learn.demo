@@ -45,6 +45,12 @@ public class JenkinsController {
         return jenkinsService.getDetailList(jobName);
     }
 
+    @GetMapping(value = "/jenkins/xml")
+    public String getJenkinsXml(@RequestParam String jobName) throws IOException, URISyntaxException,
+            InterruptedException {
+        return jenkinsService.getJobXml(jobName);
+    }
+
     @GetMapping(value = "/jenkins/build")
     public QueueReference build(@RequestParam String jobName) throws IOException, URISyntaxException,
             InterruptedException {
