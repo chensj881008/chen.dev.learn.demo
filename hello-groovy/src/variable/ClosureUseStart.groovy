@@ -7,6 +7,36 @@ package variable
  */
 //闭包使用
 //- 与基本类型的集合使用
+int x = 10
+// upto 用来求num的阶乘
+static int fab(int num){
+    int result = 1;
+    1.upto(num,{n -> result *= n})
+    return result;
+}
+def result = fab(x)
+println(result)
+// downto 用来求num的阶乘
+static int fab2(int num){
+    int result = 1;
+    num.downto(1){
+        n ->  result *=n
+    }
+    return result
+}
+result = fab2(x)
+println(result)
+// times 方法，不能用来获取阶乘，源码中index从0开始
+static int count(num){
+    int result = 0
+    num.times {
+        n -> result += n
+    }
+    return result
+}
+
+result = count(x)
+println(result)
 
 //- 与String结合使用
 
